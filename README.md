@@ -1,6 +1,7 @@
 # Robot Learning Workshop
 
-**Your video → human motion → robot motion**  
+**Your video → human motion → robot motion**
+
 Powered by GVHMR + GMR. Training happens on workshop servers.
 
 ### ① Register
@@ -38,5 +39,6 @@ Results: **`data/outputs/clip/`**. Send the clip's results to the workshop team 
 
 ---
 
-**Update:** `git pull` · **Privacy:** videos, models and credentials stay out of Git.  
+**Update:** `git pull` · **Privacy:** videos, models and credentials stay out of Git.
+
 **Preview:** Docker GPU validation is pending. [Details & credits](docs/setup-details.md).
