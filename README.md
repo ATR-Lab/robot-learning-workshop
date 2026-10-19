@@ -3,19 +3,34 @@
 Video → human motion with **GVHMR** → grounded **Booster K1** motion with **GMR**.
 Training runs on the workshop servers. This container prepares and exports motion only.
 
-## Install before the workshop
+## Before you start
 
-1. Use **x86_64 Linux + an NVIDIA GPU** for Docker. Install the [NVIDIA driver](https://www.nvidia.com/en-us/drivers/), [Docker Engine and Compose](https://docs.docker.com/engine/install/ubuntu/), and [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html). Follow the toolkit's Docker configuration instructions. Check that `nvidia-smi` and `docker info` work.
-2. Register at **[SMPL-X](https://smpl-x.is.tue.mpg.de/)** and **[SMPL](https://smpl.is.tue.mpg.de/)** separately, accept their terms, and have both logins ready. Setup downloads and places the models automatically.
-3. Clone this repository using its GitHub Clone URL, open its folder, and run:
+Register separately at **[SMPL-X](https://smpl-x.is.tue.mpg.de/)** and **[SMPL](https://smpl.is.tue.mpg.de/)**, accept their terms, and keep both logins ready. The software downloads and places the models after login.
+
+```bash
+git clone https://github.com/ATR-Lab/robot-learning-workshop.git
+cd robot-learning-workshop
+```
+
+## Option 1 · Docker on Windows or Ubuntu
+
+Use an NVIDIA GPU. On **Ubuntu**, install the [NVIDIA driver](https://www.nvidia.com/en-us/drivers/), [Docker Engine and Compose](https://docs.docker.com/engine/install/ubuntu/), and [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html), including its Docker configuration step.
+
+On **Windows**, install the NVIDIA Windows driver and [Docker Desktop with WSL 2](https://docs.docker.com/desktop/features/wsl/). Enable integration with your Ubuntu WSL distro, and run all workshop commands inside its Ubuntu terminal. Do not install a Linux NVIDIA display driver inside WSL. See [Docker GPU prerequisites](https://docs.docker.com/desktop/features/gpu/).
+
+Check `nvidia-smi` and `docker info`, then run:
 
 ```bash
 ./setup.sh
 ```
 
-Setup builds the image, checks CUDA, and prompts for the two model accounts. No host Python or Conda installation needed. Allow several GB for model downloads plus space for the Docker image. Credentials and models stay in your ignored `data/` folder; do not share that folder wholesale.
+Setup builds the image, checks CUDA, and asks for your SMPL/SMPL-X logins. No host Python or Conda installation needed. Allow several GB for models plus space for the Docker image. Credentials and models stay in ignored `data/`; do not share that folder wholesale.
 
-## Use
+## Option 2 · macOS (Apple Silicon)
+
+Run GVHMR natively using the Apple GPU. Follow [the Mac instructions](docs/macos.md). Docker is not required for this option. Retargeting and training can run on workshop servers.
+
+## Use Docker
 
 Put a short video in `data/inputs/clip.mp4`: one person, full body visible, stationary camera.
 
@@ -45,9 +60,9 @@ Run `git pull` for new workshop scripts. Run `./workshop build` only when depend
 
 ## Mac and status
 
-On Apple Silicon, keep using native GVHMR for Apple GPU acceleration; Docker on Mac does not provide CUDA. This Docker setup targets Linux + NVIDIA.
+On Apple Silicon, keep using native GVHMR for Apple GPU acceleration; Docker on Mac does not provide CUDA. This Docker setup targets Linux + NVIDIA, including Ubuntu under WSL 2.
 
-**Initial implementation: the image and full pipeline still need validation on an NVIDIA machine before the workshop.** Local orchestration tests do not exercise inference or retargeting.
+**Initial implementation: the image and full pipeline still need validation on an NVIDIA machine before the workshop.** Local orchestration tests do not exercise inference or retargeting. Windows/WSL 2 is also pending validation.
 
 ## Credits
 
