@@ -1,46 +1,42 @@
 # Robot Learning Workshop
 
-Turn a video into human and robot motion with **GVHMR + GMR**. Training runs on our servers.
+**Your video → human motion → robot motion**  
+Powered by GVHMR + GMR. Training happens on workshop servers.
 
-## 1. Create two accounts
+### ① Register
 
-Register at **[SMPL-X](https://smpl-x.is.tue.mpg.de/)** and **[SMPL](https://smpl.is.tue.mpg.de/)**. Accept the terms and keep both logins ready. Setup downloads the models for you.
+Create accounts at **[SMPL-X](https://smpl-x.is.tue.mpg.de/)** and **[SMPL](https://smpl.is.tue.mpg.de/)**. Accept the terms. Setup downloads the models after login.
 
-## 2. Download the workshop
+### ② Download
 
 ```bash
 git clone https://github.com/ATR-Lab/robot-learning-workshop.git
 cd robot-learning-workshop
 ```
 
-## 3. Choose your setup
+### ③ Choose your setup
 
-### Windows or Ubuntu · Docker
+| Windows / Ubuntu · NVIDIA GPU | Mac · Apple Silicon |
+| :--- | :--- |
+| Install [Docker + GPU support](docs/docker.md), then run `./setup.sh`. | Follow the [native Mac setup](docs/macos.md). No Docker needed. |
 
-Install **Docker** and the NVIDIA GPU support for your system: [Windows instructions](https://docs.docker.com/desktop/features/gpu/) · [Ubuntu instructions](docs/docker.md).
+### ④ Run
 
-On Windows, run the commands below in your **Ubuntu WSL 2 terminal** with Docker Desktop running.
+Put a short, stationary-camera video in `data/inputs/clip.mp4`.
 
-```bash
-./setup.sh
-```
-
-Enter your SMPL-X and SMPL logins when asked. First setup downloads large files.
-
-Put your video in `data/inputs/clip.mp4`, then run:
-
+**Docker**
 ```bash
 ./workshop process data/inputs/clip.mp4
 ```
 
-### Mac · Native installation
+**Mac** · activate your environment first
+```bash
+gvhmr demo data/inputs/clip.mp4 -s --no-render -o data/outputs
+```
 
-No Docker needed. Follow the **[Mac instructions](docs/macos.md)**.
+Results: **`data/outputs/clip/`**. Send the clip's results to the workshop team for server processing and training.
 
-## 4. Send your results
+---
 
-Start with a short video of one person, full body visible, with a stationary camera. Results appear in `data/outputs/clip/`. Follow the workshop team's instructions to send that clip's results for server training.
-
-Videos, models and credentials stay local and are excluded from Git. To get new scripts, run `git pull`.
-
-**Status:** Docker still needs validation on an NVIDIA machine before the workshop. [Technical details and credits](docs/setup-details.md).
+**Update:** `git pull` · **Privacy:** videos, models and credentials stay out of Git.  
+**Preview:** Docker GPU validation is pending. [Details & credits](docs/setup-details.md).

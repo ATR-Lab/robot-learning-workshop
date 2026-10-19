@@ -1,4 +1,10 @@
-# Ubuntu · Docker setup
+# Docker setup
+
+## Windows
+
+Install the NVIDIA Windows driver and [Docker Desktop with WSL 2 GPU support](https://docs.docker.com/desktop/features/gpu/). Enable Docker Desktop integration with your Ubuntu WSL distro. Run workshop commands inside that Ubuntu terminal with Docker Desktop running. Do not install a Linux NVIDIA display driver inside WSL.
+
+## Ubuntu
 
 Use an NVIDIA GPU. Install these in order:
 
