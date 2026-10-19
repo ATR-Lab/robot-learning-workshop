@@ -1,0 +1,23 @@
+services:
+  workshop:
+    image: ${WORKSHOP_IMAGE:-robot-learning-workshop:dev}
+    build: .
+    platform: linux/amd64
+    gpus: all
+    shm_size: "8gb"
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+      - ./data/home:/root
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility,graphics
+      GVHMR_BODY_MODELS: /workspace/data/body_models
+      GVHMR_DEVICE: cuda
+      HF_HOME: /workspace/data/cache/huggingface
+      XDG_CACHE_HOME: /workspace/data/cache
+      MUJOCO_GL: egl
+      OMNI_KIT_ALLOW_ROOT: "1"
+      OMNI_KIT_ACCEPT_EULA: ${ACCEPT_EULA:-N}
+      ACCEPT_EULA: ${ACCEPT_EULA:-N}
+      WANDB_MODE: offline

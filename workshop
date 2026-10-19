@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+cd "$(dirname "$0")"
+command -v docker >/dev/null || { echo 'Install Docker Engine and Compose: see README.md' >&2; exit 1; }
+docker compose version >/dev/null
+if [[ "${1:-}" == build ]]; then
+    exec docker compose build
+fi
+mkdir -p data/{inputs,outputs,body_models,cache,home}
+exec docker compose run --rm workshop "$@"
