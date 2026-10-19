@@ -17,7 +17,3 @@ services:
       HF_HOME: /workspace/data/cache/huggingface
       XDG_CACHE_HOME: /workspace/data/cache
       MUJOCO_GL: egl
-      OMNI_KIT_ALLOW_ROOT: "1"
-      OMNI_KIT_ACCEPT_EULA: ${ACCEPT_EULA:-N}
-      ACCEPT_EULA: ${ACCEPT_EULA:-N}
-      WANDB_MODE: offline

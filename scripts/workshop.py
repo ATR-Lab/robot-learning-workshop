@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import os
 from pathlib import Path
 import re
@@ -13,10 +12,7 @@ import sys
 ROOT = Path('/workspace')
 DATA = ROOT / 'data'
 PIPELINE = Path('/opt/pipeline')
-BOOSTER = PIPELINE / 'external/booster'
-TRAIN = BOOSTER / 'booster_train'
-ASSETS = BOOSTER / 'booster_assets'
-PYTHONS = {name: Path('/opt') / name / 'bin/python' for name in ('gvhmr', 'gmr', 'train')}
+PYTHONS = {name: Path('/opt') / name / 'bin/python' for name in ('gvhmr', 'gmr')}
 
 
 def run(command, *, cwd=ROOT, log=None):
@@ -52,11 +48,6 @@ def data_file(value):
     return path
 
 
-def licensed():
-    if os.environ.get('ACCEPT_EULA') != 'Y':
-        raise RuntimeError('Review the licenses in README, then set ACCEPT_EULA=Y in .env.')
-
-
 def doctor():
     run(['nvidia-smi'])
     snapshots = DATA / 'outputs/environment'
@@ -69,9 +60,6 @@ def doctor():
         with (snapshots / f'{name}.txt').open('w') as out:
             subprocess.run([str(python), '-m', 'pip', 'freeze'], stdout=out, check=True)
     run([PYTHONS['gmr'], '-c', 'import general_motion_retargeting, mujoco; print("GMR imports OK")'])
-    # AppLauncher is initialized by the training/conversion commands, not here.
-    run([PYTHONS['train'], '-c', 'from importlib.metadata import version; '
-         'print("Isaac Sim", version("isaacsim")); print("Isaac Lab", version("isaaclab"))'])
 
 
 def process(video, clip):
@@ -90,15 +78,6 @@ def process(video, clip):
     run([PYTHONS['gvhmr'], ROOT / 'scripts/recover.py', staged, prediction],
         log=folder / 'logs/gvhmr.log')
     retarget(prediction, clip)
-
-
-def install_motion(clip):
-    source = DATA / 'outputs' / clip / f'{clip}.npz'
-    if not source.is_file():
-        raise FileNotFoundError(f'{source}: run process or retarget first.')
-    destination = ASSETS / 'motions/K1'
-    destination.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(source, destination / source.name)
 
 
 def retarget(prediction, clip):
@@ -120,49 +99,12 @@ def retarget(prediction, clip):
     if not csv.is_file():
         raise FileNotFoundError(f'GMR produced no CSV: {csv}')
     shutil.copy2(csv, folder / f'{clip}.csv')
-    # The pinned Booster converter uses --output_name (newer revisions use --output_file).
-    converter = TRAIN / 'scripts/csv_to_npz.py'
-    text = converter.read_text()
-    flag = '--output_file' if re.search(r'add_argument\(\s*[\'\"]--output_file[\'\"]', text) else '--output_name'
-    run([PYTHONS['train'], converter, '--headless', '--input_file', csv,
-         '--input_fps', '30', flag, folder / f'{clip}.npz', '--output_fps', '50'],
-        cwd=TRAIN, log=folder / 'logs/npz.log')
-    install_motion(clip)
-    print(f'Ready: data/outputs/{clip}/. Train with: ./workshop train {clip}')
+    print(f'Ready: data/outputs/{clip}/. Send this folder to the workshop server for training.')
 
-
-def train(clip, num_envs, max_iterations):
-    install_motion(clip)
-    folder = DATA / 'outputs' / clip
-    run([PYTHONS['gmr'], PIPELINE / 'scripts/make_task.py', '--clip', clip,
-         '--output-root', DATA / 'outputs', '--force'], log=folder / 'logs/task.log')
-    task_root = TRAIN / 'source/booster_train/booster_train/tasks/manager_based/beyond_mimic/robots/k1'
-    markers = [json.loads(p.read_text()) for p in task_root.rglob('.expressive_motion_generated.json')]
-    tasks = [m for m in markers if m.get('clip') == clip and m.get('robot') == 'booster_k1']
-    if len(tasks) != 1:
-        raise RuntimeError(f'Expected one generated task for {clip}, found {len(tasks)}')
-    logs = DATA / 'outputs/training'
-    logs.mkdir(parents=True, exist_ok=True)
-    target = TRAIN / 'logs'
-    if not target.exists():
-        target.symlink_to(logs, target_is_directory=True)
-    elif not target.is_symlink() or target.resolve() != logs.resolve():
-        raise RuntimeError(f'{target} must point to {logs}; refusing to hide existing logs.')
-    run([PYTHONS['train'], TRAIN / 'scripts/rsl_rl/train.py', '--task', tasks[0]['gym_id'],
-         '--headless', '--device', 'cuda:0', '--logger', 'tensorboard',
-         '--num_envs', num_envs, '--max_iterations', max_iterations], cwd=TRAIN,
-        log=folder / 'logs/train.log')
-
-
-def positive(value):
-    number = int(value)
-    if number < 1:
-        raise argparse.ArgumentTypeError('Must be positive.')
-    return number
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description='Robot Learning Workshop: video → K1 motion → training.')
+    parser = argparse.ArgumentParser(description='Robot Learning Workshop: video → human motion → K1 motion export.')
     subs = parser.add_subparsers(dest='command', required=True)
     for name in ('setup', 'doctor', 'info', 'shell'):
         subs.add_parser(name)
@@ -172,12 +114,7 @@ def main(argv=None):
     p = subs.add_parser('retarget', help='Use an existing trusted 30 fps GVHMR result.')
     p.add_argument('prediction')
     p.add_argument('--clip', required=True, type=clip_name)
-    p = subs.add_parser('train', help='Train a generated Booster K1 task.')
-    p.add_argument('clip', type=clip_name)
-    p.add_argument('--num-envs', type=positive, default=1024)
-    p.add_argument('--max-iterations', type=positive, default=10000)
     args = parser.parse_args(argv)
-    licensed()
     for directory in ('inputs', 'outputs', 'cache', 'home', 'body_models'):
         (DATA / directory).mkdir(parents=True, exist_ok=True)
     if args.command == 'setup':
@@ -193,8 +130,6 @@ def main(argv=None):
         process(args.video, args.clip)
     elif args.command == 'retarget':
         retarget(args.prediction, args.clip)
-    elif args.command == 'train':
-        train(args.clip, args.num_envs, args.max_iterations)
 
 
 if __name__ == '__main__':
