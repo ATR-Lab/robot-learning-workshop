@@ -1,40 +1,7 @@
-# macOS · Apple Silicon
+# Mac requirements
 
-Install Python **3.12** (macOS 14+ for the pinned simulator packages), and register separately at [SMPL-X](https://smpl-x.is.tue.mpg.de/) and [SMPL](https://smpl.is.tue.mpg.de/). Accept their terms and keep both logins ready. Setup installs native GVHMR and a separate MuJoCo environment.
+Use **Apple Silicon**, **macOS 14+**, and **Python 3.12**. No Docker or NVIDIA driver is needed.
 
-From the workshop repository:
+[Return to the README](../README.md) and run `./setup.sh`. It installs GVHMR, MuJoCo and the K1 model, then asks for your SMPL/SMPL-X logins.
 
-```bash
-./setup.sh
-source .venv/bin/activate
-```
-
-`auth smpl` downloads the body models using your accounts; no manual file placement. Device diagnostics should show `mps` for Apple GPU acceleration. Additional weights download on first use.
-
-Put a short, stationary-camera video with one person fully visible in `data/inputs/clip.mp4`:
-
-```bash
-mkdir -p data/inputs data/outputs
-# Copy your video to data/inputs/clip.mp4, then:
-gvhmr demo data/inputs/clip.mp4 -s --no-render -o data/outputs
-```
-
-For overlay videos, run without `--no-render`:
-
-```bash
-gvhmr demo data/inputs/clip.mp4 -s -o data/outputs
-open data/outputs/clip
-```
-
-Send `data/outputs/clip/hmr4d_results.pt` to the workshop server using the organizer's transfer instructions. Server-side GMR prepares the robot motion; policy training also runs there. Native GMR installation is not part of these Mac instructions.
-
-On subsequent terminal sessions, activate the environment with `source .venv/bin/activate`. No Docker or NVIDIA drivers are needed. This path was exercised with GVHMR on an Apple Silicon laptop; performance depends on the laptop and clip.
-
-To play a workshop ONNX policy:
-
-```bash
-source .venv-sim/bin/activate
-./sim play data/policies/policy.onnx
-```
-
-Setup downloads the K1 model; motion and settings are read from the workshop ONNX. For simulation only, install with `./setup.sh --sim-only`; no SMPL accounts are needed. Add `--web` for a browser viewer. Older exports still work when their original settings and reference files remain beside the policy.
+The README shows the activation commands and the three workflow steps. For MuJoCo only, use `./setup.sh --sim-only`; no SMPL accounts are needed.

@@ -1,38 +1,9 @@
-# Docker setup
+# Docker requirements
 
-## Windows
+**Windows:** install the NVIDIA Windows driver and [Docker Desktop with WSL 2 GPU support](https://docs.docker.com/desktop/features/gpu/). Enable integration with your Ubuntu WSL distro and keep Docker Desktop running. Use its Ubuntu terminal. Do not install a Linux display driver inside WSL.
 
-Install the NVIDIA Windows driver and [Docker Desktop with WSL 2 GPU support](https://docs.docker.com/desktop/features/gpu/). Enable Docker Desktop integration with your Ubuntu WSL distro. Run workshop commands inside that Ubuntu terminal with Docker Desktop running. Do not install a Linux NVIDIA display driver inside WSL.
+**Ubuntu:** install the NVIDIA driver, [Docker Engine + Compose](https://docs.docker.com/engine/install/ubuntu/), and [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html), including its Docker configuration step.
 
-## Ubuntu
+[Return to the README](../README.md) and run `./setup.sh`. It builds the images, checks the GPU, and asks for your **SMPL/SMPL-X** logins. **No Docker account, `docker login`, venv activation or manual container shell is needed.**
 
-Use an NVIDIA GPU. Install these in order:
-
-1. [NVIDIA driver](https://www.nvidia.com/en-us/drivers/).
-2. [Docker Engine and Compose](https://docs.docker.com/engine/install/ubuntu/).
-3. [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html). Complete its Docker configuration step too.
-
-Check that these commands work:
-
-```bash
-nvidia-smi
-docker info
-```
-
-Then, from the workshop folder:
-
-```bash
-./setup.sh
-```
-
-Enter your SMPL-X and SMPL logins when prompted. Setup builds the container and checks GPU access. Models and results stay in `data/` between runs.
-
-Setup also builds the CPU MuJoCo image and downloads the K1 model. Save a workshop export as `data/policies/policy.onnx`, then run:
-
-```bash
-./sim --docker play data/policies/policy.onnx
-```
-
-Open **http://localhost:8080** and press **Play**. Motion and settings are read automatically from the ONNX. To install simulation only, use `./setup.sh --sim-only`; this needs Docker but no NVIDIA GPU or SMPL accounts. Local files must be inside this repository so the container can read them.
-
-[Back to the workshop](../README.md).
+The scripts start containers automatically; keep using the same terminal. For MuJoCo only, use `./setup.sh --sim-only`; no NVIDIA GPU or SMPL accounts are needed.

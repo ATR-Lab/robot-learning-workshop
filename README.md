@@ -2,9 +2,11 @@
 
 **Your video → human motion → robot motion. Training happens on workshop servers.**
 
+[Watch the K1 cartwheel reference video](docs/examples/cartwheel_final_29999.mp4) — an example MuJoCo result.
+
 ### ① Register
 
-Create accounts at **[SMPL-X](https://smpl-x.is.tue.mpg.de/)** and **[SMPL](https://smpl.is.tue.mpg.de/)**. Accept the terms. Setup downloads the models after login.
+For video conversion, create accounts at **[SMPL-X](https://smpl-x.is.tue.mpg.de/)** and **[SMPL](https://smpl.is.tue.mpg.de/)**. Accept the terms. Setup asks for these logins and downloads the models.
 
 ### ② Download
 
@@ -17,13 +19,21 @@ cd robot-learning-workshop
 
 | Windows / Ubuntu · NVIDIA GPU | Mac · Apple Silicon |
 | :--- | :--- |
-| Install [Docker + GPU support](docs/docker.md), then run `./setup.sh`. | Follow the [native Mac setup](docs/macos.md). No Docker needed. |
+| Install [Docker + GPU support](docs/docker.md). | Install [Python 3.12](docs/macos.md). No Docker needed. |
+
+Then, on either setup:
+```bash
+./setup.sh
+```
+
+No Docker login or container shell is needed. Run commands in your normal terminal; on Windows, use Ubuntu/WSL. Docker users do not activate a venv.
 
 Run all commands below from this repository's folder.
 
 ### ④ Convert video · GVHMR
 
 Put a short **30 fps** video in `data/inputs/clip.mp4`: one person, full body visible, stationary camera.
+For a Docker test, [download GVHMR's tennis clip](https://raw.githubusercontent.com/zju3dv/GVHMR/ee960bb6e2ea2d381aa97f08e9b71ef320b624b1/docs/example_video/tennis.mp4) and save it at that path; Docker converts its 60 fps to 30 fps. The cartwheel video above is a robot result, not a GVHMR input.
 
 **Mac**
 ```bash
@@ -64,6 +74,6 @@ source .venv-sim/bin/activate
 ```
 Open **http://localhost:8080** and press **Play**.
 
-[Example policies and more details](docs/setup-details.md#mujoco-policy-playback). Example videos/policies are not bundled in this repository.
+[Example policies and more details](docs/setup-details.md#mujoco-policy-playback). Policy weights are provided separately.
 
 **Update:** `git pull` · **Privacy:** inputs, models and private policies stay out of Git. Docker runtime validation is pending.
