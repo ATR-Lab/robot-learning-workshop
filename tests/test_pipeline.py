@@ -11,6 +11,20 @@ spec.loader.exec_module(w)
 
 
 class PipelineTest(unittest.TestCase):
+    def test_convert_does_not_retarget_or_require_robot_models(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            video = root / 'data/inputs/clip.mp4'
+            video.parent.mkdir(parents=True)
+            video.touch()
+            with patch.multiple(w, ROOT=root, DATA=root / 'data'), patch.object(w, 'run') as run, \
+                    patch.object(w, 'retarget') as retarget:
+                prediction, clip = w.convert(video, None)
+            self.assertEqual(prediction, root / 'data/outputs/clip/gvhmr/hmr4d_results.pt')
+            self.assertEqual(clip, 'clip')
+            self.assertEqual(run.call_count, 2)
+            retarget.assert_not_called()
+
     def test_video_to_robot_export(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

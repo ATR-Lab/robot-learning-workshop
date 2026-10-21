@@ -62,7 +62,7 @@ def doctor():
     run([PYTHONS['gmr'], '-c', 'import general_motion_retargeting, mujoco; print("GMR imports OK")'])
 
 
-def process(video, clip):
+def convert(video, clip):
     video = data_file(video)
     inferred = re.sub(r'[^A-Za-z0-9_]', '_', video.stem)
     if not inferred or not inferred[0].isalpha():
@@ -77,6 +77,12 @@ def process(video, clip):
     prediction.parent.mkdir(parents=True, exist_ok=True)
     run([PYTHONS['gvhmr'], ROOT / 'scripts/recover.py', staged, prediction],
         log=folder / 'logs/gvhmr.log')
+    print(f'Human motion: data/outputs/{clip}/gvhmr/hmr4d_results.pt')
+    return prediction, clip
+
+
+def process(video, clip):
+    prediction, clip = convert(video, clip)
     retarget(prediction, clip)
 
 
@@ -108,9 +114,13 @@ def main(argv=None):
     subs = parser.add_subparsers(dest='command', required=True)
     for name in ('setup', 'doctor', 'info', 'shell'):
         subs.add_parser(name)
-    p = subs.add_parser('process', help='Process a stationary-camera video at 30 fps.')
-    p.add_argument('video')
-    p.add_argument('--clip', type=clip_name)
+    for name, help_text in (
+        ('convert', 'GVHMR only: video → human motion at 30 fps.'),
+        ('process', 'GVHMR + GMR: video → K1 motion at 30 fps.'),
+    ):
+        p = subs.add_parser(name, help=help_text)
+        p.add_argument('video')
+        p.add_argument('--clip', type=clip_name)
     p = subs.add_parser('retarget', help='Use an existing trusted 30 fps GVHMR result.')
     p.add_argument('prediction')
     p.add_argument('--clip', required=True, type=clip_name)
@@ -126,6 +136,8 @@ def main(argv=None):
         run(['/opt/gvhmr/bin/gvhmr', 'info'])
     elif args.command == 'shell':
         os.execvp('/bin/bash', ['/bin/bash'])
+    elif args.command == 'convert':
+        convert(args.video, args.clip)
     elif args.command == 'process':
         process(args.video, args.clip)
     elif args.command == 'retarget':

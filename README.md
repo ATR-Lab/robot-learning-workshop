@@ -1,58 +1,74 @@
 # Robot Learning Workshop
 
-**Your video → human motion → robot motion**
+**Video → human motion (GVHMR) → K1 motion (GMR) → server training → policy in MuJoCo.**
 
-Powered by GVHMR + GMR. Training happens on workshop servers.
+### Install once
 
-### ① Register
-
-Create accounts at **[SMPL-X](https://smpl-x.is.tue.mpg.de/)** and **[SMPL](https://smpl.is.tue.mpg.de/)**. Accept the terms. Setup downloads the models after login.
-
-### ② Download
+**Mac:** [Python 3.12, Apple Silicon, macOS 14+](docs/macos.md). **Ubuntu / Windows WSL:** [Docker + NVIDIA setup](docs/docker.md).
+For video conversion, register at [SMPL-X](https://smpl-x.is.tue.mpg.de/) and [SMPL](https://smpl.is.tue.mpg.de/) and accept their terms. Setup asks for these logins.
 
 ```bash
 git clone https://github.com/ATR-Lab/robot-learning-workshop.git
 cd robot-learning-workshop
+./setup.sh
 ```
 
-### ③ Choose your setup
+Run all commands below from `robot-learning-workshop/`. Setup creates the `data/` folders. For MuJoCo only, use `./setup.sh --sim-only`; no SMPL accounts or NVIDIA GPU needed.
 
-| Windows / Ubuntu · NVIDIA GPU | Mac · Apple Silicon |
-| :--- | :--- |
-| Install [Docker + GPU support](docs/docker.md), then run `./setup.sh`. | Follow the [native Mac setup](docs/macos.md). No Docker needed. |
+### 1 · Convert video → human motion (GVHMR)
 
-### ④ Run
+Save your video as **`data/inputs/clip.mp4`**: one person, full body visible, stationary camera, 30 fps.
 
-Put a short, stationary-camera **30 fps** video in `data/inputs/clip.mp4`.
-
-**Docker**
+**Mac** — activate the video environment:
 ```bash
-./workshop process data/inputs/clip.mp4
-```
-
-**Mac** · activate your environment first
-```bash
+source .venv/bin/activate
 gvhmr demo data/inputs/clip.mp4 -s --no-render -o data/outputs
 ```
+Output: `data/outputs/clip/hmr4d_results.pt`.
 
-Results: **`data/outputs/clip/`**. Send the clip's results to the workshop team for server processing and training.
-
-### ⑤ Run individual stages
-
+**Ubuntu / Windows WSL** — Docker handles the environment:
 ```bash
-# GVHMR · Mac, with .venv activated
-gvhmr demo data/inputs/clip.mp4 -s --no-render -o data/outputs
-# GMR → Booster K1 · NVIDIA Docker, using a 30 fps GVHMR result
-./workshop retarget data/outputs/clip/hmr4d_results.pt --clip clip
-# Trained policy → MuJoCo · Mac; use a complete policy ZIP or its download URL
-./sim play "POLICY_ZIP_OR_URL"
+./workshop convert data/inputs/clip.mp4
 ```
+Output: `data/outputs/clip/gvhmr/hmr4d_results.pt`.
 
-MuJoCo is included in `./setup.sh` on Mac and Docker. Existing installs: `./setup.sh --sim-only`.
-On Ubuntu/Windows WSL, use `./sim --docker play "POLICY_ZIP_OR_URL"`, then open **http://localhost:8080** and press **Play**. No NVIDIA GPU is needed for policy playback. [Bundle details](docs/setup-details.md#mujoco-policy-playback).
+### 2 · Retarget human motion → Booster K1 (GMR)
 
----
+**On the NVIDIA Docker setup**, use the output from step 1:
+```bash
+./workshop retarget data/outputs/clip/gvhmr/hmr4d_results.pt --clip clip
+```
+Output: `data/outputs/clip/clip.csv` and a robot-motion `.pkl`.
 
-**Update:** `git pull` · **Privacy:** videos, models and credentials stay out of Git.
+**Mac:** send `data/outputs/clip/hmr4d_results.pt` to the workshop team; they run GMR on the server. If retargeting a Mac result in your own NVIDIA setup, copy it to `data/inputs/hmr4d_results.pt` and substitute that path in the command above.
 
-**Preview:** Docker GPU validation is pending. [Details & credits](docs/setup-details.md).
+Send the clip's output folder to the team for **policy training**. They return a policy bundle. The motion `.pt`/`.csv` from these steps is not a trained policy.
+
+### 3 · Run a trained policy in MuJoCo
+
+Save the **complete policy ZIP** from the workshop team as **`data/policies/k1.zip`**. Keep it zipped. The current player needs the ONNX, matching settings, reference motion and robot model together.
+
+**Mac** — activate the simulation environment:
+```bash
+source .venv-sim/bin/activate
+./sim play data/policies/k1.zip
+```
+A MuJoCo window opens. **Enter** restarts; **Space** pauses.
+
+**Ubuntu / Windows WSL:**
+```bash
+./sim --docker play data/policies/k1.zip
+```
+Open **http://localhost:8080** and click **Play**. **Reset** restarts.
+
+A complete bundle **folder** or a **direct ZIP download URL** also works instead of `data/policies/k1.zip`.
+
+### Example
+
+If you have the supplied cartwheel folder in Downloads, run on Mac:
+```bash
+./sim play ~/Downloads/Booster-K1-Cartwheel-MuJoCo
+```
+K1 starts standing, performs a cartwheel and returns to standing. This example passed the headless Mac check. **The example bundle and a demo input video are not included in this repository**; get the bundle from the workshop team, or use your own video for step 1.
+
+**Update:** `git pull` · [More details](docs/setup-details.md) · Docker inference and the simulation container still need runtime validation. Videos, licensed models and private policy bundles stay out of Git.

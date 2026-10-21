@@ -2,6 +2,7 @@
 set -Eeuo pipefail
 cd "$(dirname "$0")"
 [[ $# -eq 0 || ( $# -eq 1 && "$1" == --sim-only ) ]] || { echo 'Usage: ./setup.sh [--sim-only]' >&2; exit 1; }
+mkdir -p data/inputs data/outputs data/policies
 if [[ "$(uname -s)" == Darwin ]]; then
     ./sim setup
     [[ "${1:-}" != --sim-only ]] || exit 0

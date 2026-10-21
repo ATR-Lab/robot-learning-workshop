@@ -35,10 +35,13 @@ Run GVHMR natively using the Apple GPU. Follow [the Mac instructions](macos.md).
 Put a short video in `data/inputs/clip.mp4`: one person, full body visible, stationary camera.
 
 ```bash
-./workshop process data/inputs/clip.mp4
+./workshop convert data/inputs/clip.mp4
+./workshop retarget data/outputs/clip/gvhmr/hmr4d_results.pt --clip clip
 ```
 
 Results are in `data/outputs/clip/`: human-motion `gvhmr/hmr4d_results.pt`, robot-motion `robot_data/booster_k1/clip_booster_k1.pkl`, `clip.csv`, staged video and logs. Send **only this clip's output folder** to the workshop server using the organizer's transfer instructions. The server handles training-format conversion and policy training.
+
+To run conversion and retargeting together, use `./workshop process data/inputs/clip.mp4`.
 
 Already recovered motion on your Mac? Copy the trusted 30 fps result into `data/` and run:
 
