@@ -1,0 +1,20 @@
+{
+  "repository": "IntelligentRoboticsLab/booster_mjlab",
+  "commit": "d92e11395d961096d639446c0a8a176f12bb51da",
+  "xml_path": "src/booster_mjlab/robots/booster_k1/xmls/k1.xml",
+  "policy_dt": 0.02,
+  "sim_dt": 0.005,
+  "decimation": 4,
+  "solver_iterations": 10,
+  "actuator_delay": 5,
+  "motors": {
+    "Head": [0.001, 6.0, 7.85, 7.85],
+    "Shoulder": [0.001, 14.0, 33.51, 5.24],
+    "Elbow": [0.001, 14.0, 33.51, 5.24],
+    "Hip_Pitch": [0.0478125, 68.0, 14.66, 1.88],
+    "Hip_Roll": [0.0339552, 76.0, 12.57, 2.62],
+    "Hip_Yaw": [0.0282528, 38.3, 17.59, 7.85],
+    "Knee": [0.095625, 112.0, 12.57, 2.09],
+    "Ankle": [0.0565056, 38.3, 17.59, 7.85]
+  }
+}

@@ -1,4 +1,4 @@
-"""Import complete K1 ONNX tracking bundles and launch the workshop MuJoCo player."""
+"""Run a K1 tracking ONNX, policy folder, ZIP or download URL in MuJoCo."""
 from __future__ import annotations
 
 import argparse
@@ -49,8 +49,8 @@ def find_config(root):
 def validate_bundle(root):
     config = find_config(root)
     cfg = json.loads(config.read_text())
-    if cfg['obs_dim'] not in (119, 125) or len(cfg['joint_names']) != 22:
-        raise ValueError('This player supports K1 tracking exports with 22 joints and 119/125 observations.')
+    if cfg['obs_dim'] not in (119, 125, 128) or len(cfg['joint_names']) != 22:
+        raise ValueError('This player supports K1 tracking exports with 22 joints and 119/125/128 observations.')
     for key in ('onnx', 'motion', 'robot_xml'):
         path = contained(root, config.parent.relative_to(root) / cfg[key])
         if not path.is_file():
@@ -102,7 +102,10 @@ def import_bundle(source, name):
             archive = temp / 'download.zip'
             print('Downloading policy bundle…', flush=True)
             download(source, archive)
-            unpack(archive, payload)
+            if zipfile.is_zipfile(archive):
+                unpack(archive, payload)
+            else:
+                archive.rename(payload / 'policy.onnx')
         else:
             path = Path(source).expanduser().resolve()
             if path.is_dir():
@@ -115,6 +118,12 @@ def import_bundle(source, name):
                 unpack(path, payload)
             else:
                 raise ValueError('Use a complete policy folder or ZIP, or a direct HTTP(S) ZIP link.')
+        if not list(payload.rglob('config.json')):
+            models = list(payload.rglob('*.onnx'))
+            if len(models) == 1:
+                from prepare_policy import prepare_onnx
+                prepared = prepare_onnx(models[0], POLICIES)
+                shutil.copytree(prepared, payload / 'runtime')
         validate_bundle(payload)
         payload.rename(destination)
     print(f'Imported {name}. Launch: ./sim play {name}')
@@ -128,7 +137,22 @@ def resolve_source(source):
         return cached if cached.exists() else import_bundle(source, name)
     path = Path(source).expanduser()
     if path.is_dir():
+        if not list(path.rglob('config.json')):
+            models = list(path.rglob('*.onnx'))
+            if len(models) == 1:
+                return resolve_source(str(models[0]))
         return path.resolve()
+    if path.is_file() and path.suffix.lower() == '.onnx':
+        # Older exports have sidecars; keep their exact configuration and robot model.
+        sidecar = path.parent / 'config.json'
+        if sidecar.is_file():
+            cfg = json.loads(sidecar.read_text())
+            if cfg.get('onnx') != path.name:
+                raise ValueError('The ONNX filename does not match its config.json.')
+            paths = [path.parent.resolve(), (path.parent / cfg['robot_xml']).resolve().parent]
+            return Path(os.path.commonpath(paths))
+        from prepare_policy import prepare_onnx
+        return prepare_onnx(path, POLICIES)
     if path.is_file() and zipfile.is_zipfile(path):
         name = 'zip_' + hashlib.sha256(path.read_bytes()).hexdigest()[:16]
         cached = POLICIES / name
@@ -136,7 +160,7 @@ def resolve_source(source):
     cached = POLICIES / bundle_name(source)
     if cached.is_dir():
         return cached
-    raise FileNotFoundError(f'Policy {source!r} was not found. Use ./sim import SOURCE --name NAME.')
+    raise FileNotFoundError(f'Policy {source!r} was not found. Pass an ONNX file, policy folder or ZIP URL.')
 
 
 def pack_bundle(source, output):
@@ -169,7 +193,7 @@ def main(argv=None):
     pack = commands.add_parser('pack', help='Make a data-only ZIP for participants.')
     pack.add_argument('source')
     pack.add_argument('--output', required=True)
-    play = commands.add_parser('play', help='Run a policy name, folder or ZIP URL in MuJoCo.',
+    play = commands.add_parser('play', help='Run an ONNX file, policy folder, ZIP or HTTP(S) URL.',
                                epilog='Player flags: --web, --check, --json FILE, --record FILE, --no-ghost.')
     play.add_argument('source')
     play.add_argument('player_args', nargs=argparse.REMAINDER)

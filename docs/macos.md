@@ -30,4 +30,11 @@ Send `data/outputs/clip/hmr4d_results.pt` to the workshop server using the organ
 
 On subsequent terminal sessions, activate the environment with `source .venv/bin/activate`. No Docker or NVIDIA drivers are needed. This path was exercised with GVHMR on an Apple Silicon laptop; performance depends on the laptop and clip.
 
-To play a trained policy: `./sim play "POLICY_ZIP_OR_URL"`. For simulation only, install with `./setup.sh --sim-only`; no SMPL accounts are needed. Add `--web` for a browser viewer.
+To play a workshop ONNX policy:
+
+```bash
+source .venv-sim/bin/activate
+./sim play data/policies/policy.onnx
+```
+
+Setup downloads the K1 model; motion and settings are read from the workshop ONNX. For simulation only, install with `./setup.sh --sim-only`; no SMPL accounts are needed. Add `--web` for a browser viewer. Older exports still work when their original settings and reference files remain beside the policy.

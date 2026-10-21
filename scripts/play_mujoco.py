@@ -40,7 +40,7 @@ p.add_argument("--host", default="0.0.0.0" if os.environ.get("SIM_DOCKER") else 
 p.add_argument("--port", type=int, default=8080)
 p.add_argument("--json", help="also write the metrics to this json file")
 p.add_argument("--friction", type=float, default=0.9)
-p.add_argument("--delay", type=int, default=5, help="actuator delay in physics steps of 5 ms")
+p.add_argument("--delay", type=int, default=5, help="actuator delay in physics steps (default: 25 ms)")
 p.add_argument("--pose", default="nominal", choices=["nominal", "positive", "negative"])
 p.add_argument("--hold", type=float, default=None, help="seconds to keep tracking the last frame after the clip")
 p.add_argument("--no-ghost", action="store_true", help="do not draw the reference robot")
@@ -90,8 +90,8 @@ def yaw_of(q):
 # ---------- load policy folder ----------
 pdir = Path(args.policy)
 cfg = json.loads((pdir / "config.json").read_text())
-if cfg["obs_dim"] not in (119, 125) or len(cfg["joint_names"]) != 22:
-    p.error("supported K1 tracking exports have 22 joints and 119 or 125 observations")
+if cfg["obs_dim"] not in (119, 125, 128) or len(cfg["joint_names"]) != 22:
+    p.error("supported K1 tracking exports have 22 joints and 119, 125 or 128 observations")
 if not np.isclose(cfg["policy_dt"], cfg["sim_dt"] * cfg["decimation"]):
     p.error("policy_dt must equal sim_dt × decimation")
 policy = ort.InferenceSession(str(pdir / cfg["onnx"]), providers=["CPUExecutionProvider"])
@@ -118,8 +118,9 @@ kp, kd = np.array(cfg["kp"]), np.array(cfg["kd"])
 effort, vmax = np.array(cfg["effort_limit"]), np.array(cfg["velocity_limit"])
 knee = np.minimum(np.array(cfg["knee_point_velocity"]), vmax)
 scale, default = np.array(cfg["action_scale"]), np.array(cfg["default_joint_pos"])
-head_idx = [names.index("AAHead_yaw"), names.index("Head_pitch")]
-obs_keep = np.arange(125) if cfg["obs_dim"] == 125 else np.r_[0:44, 47:53, 56:125]  # 119 = drop anchor pos + lin vel
+head_idx = [names.index("AAHead_yaw"), names.index("Head_pitch")] if cfg["head_zero"] else []
+obs_keep = np.arange(125) if cfg["obs_dim"] in (125, 128) else np.r_[0:44, 47:53, 56:125]
+implicit_position = cfg.get("control_mode") == "implicit_position"
 
 
 # ---------- MuJoCo model, set up like the training config ----------
@@ -127,11 +128,15 @@ def make_model():
     m = mujoco.MjModel.from_xml_path(xml)
     m.opt.timestep = cfg["sim_dt"]
     m.opt.gravity[:] = [0, 0, -9.81]
-    m.opt.iterations = 100
+    m.opt.iterations = cfg.get("solver_iterations", 100)
     m.opt.integrator = mujoco.mjtIntegrator.mjINT_IMPLICITFAST
-    m.geom_condim[:] = 3
-    m.geom_friction[:] = [args.friction, 0.005, 0.0001]
-    m.actuator_forcelimited[:] = False
+    if not implicit_position:
+        m.geom_condim[:] = 3
+        m.geom_friction[:] = [args.friction, 0.005, 0.0001]
+    else:
+        # Nominal training coefficients; --friction changes them proportionally.
+        m.geom_friction[:, 0] *= args.friction / 0.9
+    m.actuator_forcelimited[:] = implicit_position
     m.actuator_ctrllimited[:] = False
     m.geom_group[m.geom("ground").id] = 2  # so we can hide collision geoms (group 0) but keep the floor
     m.vis.global_.offwidth = max(args.width, 640)
@@ -150,6 +155,7 @@ m.dof_frictionloss[va] = 0
 limits = m.jnt_range[jid]
 trunk = m.body(cfg["anchor_body"]).id
 decimation = cfg["decimation"]
+act_ids = np.array([m.actuator(n).id for n in names]) if implicit_position else None
 
 ref_m = make_model()  # second copy only for drawing the reference
 ref_d = mujoco.MjData(ref_m)
@@ -207,6 +213,19 @@ class Episode:
         mujoco.mj_objectVelocity(m, d, mujoco.mjtObj.mjOBJ_BODY, trunk, vel, 1)  # local frame: [ang, lin]
         full = np.concatenate((z["joint_pos"][t], z["joint_vel"][t], pos_b, ori_b, vel[3:], vel[:3],
                                d.qpos[qa] - default, d.qvel[va], self.last))
+        if "observation_names" in cfg:
+            parts = dict(command=np.r_[z["joint_pos"][t], z["joint_vel"][t]],
+                         motion_anchor_pos_b=pos_b, motion_anchor_ori_b=ori_b,
+                         base_lin_vel=d.sensor("imu_lin_vel").data.copy(),
+                         base_ang_vel=d.sensor("imu_ang_vel").data.copy(),
+                         joint_pos=d.qpos[qa] - default, joint_vel=d.qvel[va], actions=self.last,
+                         projected_gravity=rb.T @ np.array([0., 0., -1.]))
+            values = []
+            for name, scale_, clip_ in zip(cfg["observation_names"], cfg["observation_scales"], cfg["observation_clips"]):
+                low, high = clip_
+                values.append(np.clip(parts[name], -np.inf if low is None else low,
+                                      np.inf if high is None else high) * np.array(scale_))
+            return np.concatenate(values).astype(np.float32)
         return full[obs_keep].astype(np.float32)
 
     def step(self):
@@ -218,7 +237,10 @@ class Episode:
         self.log["err"].append(float(np.linalg.norm(d.qpos[:3] - self.z["body_pos_w"][t, bi])))
         if self.fall_time is None and d.qpos[2] < 0.25:
             self.fall_time = self.step_i * cfg["policy_dt"]
-        action = policy.run(None, {in_name: self.obs()[None]})[0][0]
+        inputs = {in_name: self.obs()[None]}
+        if cfg.get("onnx_time_step"):
+            inputs["time_step"] = np.array([[self.ref_t()]], dtype=np.float32)
+        action = policy.run([policy.get_outputs()[0].name], inputs)[0][0]
         self.last = action.astype(np.float32)
         target = default + scale * action
         if cfg["head_zero"]:
@@ -229,11 +251,16 @@ class Episode:
             qd = d.qvel[va]
             cap = np.clip(effort * (vmax - np.abs(qd)) / np.maximum(vmax - knee, 1e-6), 0, effort)
             tau = np.clip(kp * (delayed - d.qpos[qa]) - kd * qd, -cap, cap)
-            d.ctrl[:] = 0
-            d.qfrc_applied[:] = 0
-            d.qfrc_applied[va] = tau
+            if implicit_position:
+                m.actuator_forcerange[act_ids] = np.column_stack((-cap, cap))
+                d.ctrl[act_ids] = delayed
+            else:
+                d.ctrl[:] = 0
+                d.qfrc_applied[:] = 0
+                d.qfrc_applied[va] = tau
             mujoco.mj_step(m, d)
-            self.log["tq"].append(np.abs(tau) / effort)
+            torque = d.actuator_force[act_ids] if implicit_position else tau
+            self.log["tq"].append(np.abs(torque) / effort)
             self.log["spd"].append(np.abs(qd) / vmax)
         if not np.isfinite(d.qpos).all():
             raise RuntimeError("MuJoCo state became non-finite")
@@ -281,9 +308,9 @@ ep.reset()
 
 ghost_opt = mujoco.MjvOption()
 ghost_opt.geomgroup[:] = 0
-ghost_opt.geomgroup[1] = 1  # visual meshes only
+ghost_opt.geomgroup[cfg.get("visual_group", 1)] = 1
 main_opt = mujoco.MjvOption()
-main_opt.geomgroup[0] = 0  # hide the collision geoms, keep visuals (1) and the floor (2)
+main_opt.geomgroup[cfg.get("collision_group", 0)] = 0
 
 
 def add_ghost(scn):
@@ -299,18 +326,18 @@ def add_ghost(scn):
 
 def print_metrics():
     r = ep.metrics()
-    print(json.dumps(r, indent=1))
+    print(json.dumps(r, indent=1), flush=True)
     if args.json:
         path = Path(args.json)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(r, indent=1) + "\n")
-    if cfg.get("kind") == "dance":  # the k1-emotions Isaac policies reuse this player
+    if cfg.get("kind") in ("dance", "tracking"):
         verdict = f"FELL at {r['fall_time_s']:.2f} s" if r["fell"] else "no fall"
     else:
         verdict = "COMPLETED the cartwheel" if r["completed"] else (
         f"FELL at {r['fall_time_s']:.2f} s" if r["fell"] else "did not complete (no fall, check upright values)")
-    print(f"{cfg['name']}: {verdict}")
-    return not r["fell"] if cfg.get("kind") == "dance" else r["completed"]
+    print(f"{cfg['name']}: {verdict}", flush=True)
+    return not r["fell"] if cfg.get("kind") in ("dance", "tracking") else r["completed"]
 
 
 if args.web:
@@ -321,7 +348,7 @@ if args.web:
     server.scene.set_up_direction("+z")
     scene = ViserMujocoScene(server, m, num_envs=1)
     scene.camera_tracking_enabled = False
-    scene.geom_groups_visible = [False, True, True, False, False, False]
+    scene.geom_groups_visible = [bool(v) for v in main_opt.geomgroup]
     server.gui.add_markdown(f"## Booster K1 · {cfg['name']}\nMuJoCo simulation. Press Play to start.")
     play = server.gui.add_checkbox("Play", initial_value=False)
     reset = server.gui.add_button("Reset")
@@ -436,7 +463,7 @@ def key(k):
 
 print(__doc__.split("Try:")[0])
 with mujoco.viewer.launch_passive(m, d, key_callback=key) as v:
-    v.opt.geomgroup[0] = 0
+    v.opt.geomgroup[:] = main_opt.geomgroup
     v.cam.distance, v.cam.elevation = 2.8, -12.0
     travel = ep.z["body_pos_w"][T - 1, bi, :2] - ep.z["body_pos_w"][0, bi, :2]
     v.cam.azimuth = np.degrees(np.arctan2(travel[1], travel[0])) + 90.0

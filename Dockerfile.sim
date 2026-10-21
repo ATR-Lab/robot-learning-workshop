@@ -4,7 +4,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg libegl1 
 COPY requirements/sim.txt /opt/sim-requirements.txt
 RUN pip install --no-cache-dir -r /opt/sim-requirements.txt && pip check
 WORKDIR /workspace
-COPY scripts/sim.py scripts/play_mujoco.py /workspace/scripts/
-ENV SIM_DOCKER=1 MUJOCO_GL=egl PYTHONUNBUFFERED=1
+COPY scripts/sim.py scripts/play_mujoco.py scripts/prepare_policy.py /workspace/scripts/
+COPY configs/k1_mujoco.json /workspace/configs/k1_mujoco.json
+ENV SIM_DOCKER=1 MUJOCO_GL=egl PYTHONUNBUFFERED=1 WORKSHOP_K1_ASSETS=/opt/k1-assets
+RUN python scripts/prepare_policy.py --assets --directory /opt/k1-assets
 ENTRYPOINT ["python", "/workspace/scripts/sim.py"]
 CMD ["--help"]

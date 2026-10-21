@@ -3,6 +3,7 @@
 mujoco==3.16.0
 numpy==2.5.4
 onnxruntime==1.31.0
+onnx==1.23.2
 Pillow==12.3.0
 viser==1.1.1
 mjviser==0.0.14

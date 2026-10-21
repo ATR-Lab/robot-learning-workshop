@@ -27,6 +27,12 @@ Then, from the workshop folder:
 
 Enter your SMPL-X and SMPL logins when prompted. Setup builds the container and checks GPU access. Models and results stay in `data/` between runs.
 
-Setup also builds the CPU MuJoCo image. Play a trained policy with `./sim --docker play "POLICY_ZIP_OR_URL"`, then open **http://localhost:8080** and press **Play**. Local ZIPs must be inside this repository (for example `data/policies/k1.zip`). To install simulation only, use `./setup.sh --sim-only`; this needs Docker but no NVIDIA GPU or SMPL accounts.
+Setup also builds the CPU MuJoCo image and downloads the K1 model. Save a workshop export as `data/policies/policy.onnx`, then run:
+
+```bash
+./sim --docker play data/policies/policy.onnx
+```
+
+Open **http://localhost:8080** and press **Play**. Motion and settings are read automatically from the ONNX. To install simulation only, use `./setup.sh --sim-only`; this needs Docker but no NVIDIA GPU or SMPL accounts. Local files must be inside this repository so the container can read them.
 
 [Back to the workshop](../README.md).

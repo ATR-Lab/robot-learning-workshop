@@ -4,7 +4,9 @@ import io
 import json
 from pathlib import Path
 import stat
+import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 import zipfile
@@ -29,6 +31,19 @@ def make_bundle(root):
 
 
 class BundleTests(unittest.TestCase):
+    def test_plain_onnx_download_is_prepared_automatically(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            make_bundle(root / 'prepared')
+            response = io.BytesIO(b'onnx model')
+            response.url = 'https://example.org/policy.onnx'
+            helper = SimpleNamespace(prepare_onnx=lambda path, policies: root / 'prepared')
+            with patch.object(s, 'POLICIES', root / 'installed'), \
+                    patch.object(s, 'urlopen', return_value=response), \
+                    patch.dict(sys.modules, {'prepare_policy': helper}):
+                installed = s.resolve_source('https://example.org/policy.onnx')
+            self.assertTrue(s.validate_bundle(installed).is_file())
+
     def test_download_import_and_data_only_export_roundtrip(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

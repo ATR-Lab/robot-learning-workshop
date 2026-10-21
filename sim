@@ -28,7 +28,8 @@ if [[ "${1:-}" == setup ]]; then
     "$python" -m venv "$ROOT/.venv-sim"
     "$ROOT/.venv-sim/bin/python" -m pip install -r "$ROOT/requirements/sim.txt"
     "$ROOT/.venv-sim/bin/python" -m pip check
-    echo 'Ready. Import a policy bundle, then run: ./sim play NAME'
+    "$ROOT/.venv-sim/bin/python" "$ROOT/scripts/prepare_policy.py" --assets
+    echo 'Ready. Run: ./sim play /path/to/policy.onnx'
     exit 0
 fi
 

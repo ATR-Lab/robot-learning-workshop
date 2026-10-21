@@ -63,11 +63,32 @@ Run `git pull` for new workshop scripts. Run `./workshop build` only when depend
 
 ## MuJoCo policy playback
 
-`./setup.sh` installs MuJoCo in its own environment/image. `./setup.sh --sim-only` installs just the player. Run `./sim play "POLICY_ZIP_OR_URL"` on Mac, or `./sim --docker play "POLICY_ZIP_OR_URL"` on Ubuntu/WSL. Docker uses http://localhost:8080 (**Play**, **Reset**); Mac opens the native viewer (**Enter** resets, **Space** pauses). Add `--web` on Mac for the browser, or `--check` for a headless completion check.
+`./setup.sh` installs MuJoCo and the K1 model in its own environment/image. `./setup.sh --sim-only` installs just the player. Save a workshop export as `data/policies/policy.onnx`, then run:
 
-Use a **complete K1 tracking export**: `policy.onnx`, matching `motion.npz`, `config.json` (22 joints, 119/125 observations, timing and PD gains), and robot XML with meshes at the configured relative paths. A raw training `.pt`/`.pth` or unrelated ONNX is insufficient. ZIP links must point directly to the file; local folders and ZIPs work too. Imported bundles stay in ignored `data/policies/`; downloaded Python scripts are never executed. Policy playback needs no body models, Isaac Lab, ROS or CUDA.
+```bash
+# Mac
+source .venv-sim/bin/activate
+./sim play data/policies/policy.onnx
+# Ubuntu / Windows WSL
+./sim --docker play data/policies/policy.onnx
+```
 
-Local example: `~/Downloads/Booster-K1-Cartwheel-MuJoCo`. To share it: `./sim import ~/Downloads/Booster-K1-Cartwheel-MuJoCo --name cartwheel`, then `./sim pack cartwheel --output data/exports/booster-k1-cartwheel.zip`. Share the ZIP or a direct download URL; keep private exports out of Git. See [Booster's MuJoCo instructions](https://docs.booster.tech/docs/developer-guide/open-source/booster-deploy/) and [MuJoCo's Mac launcher documentation](https://mujoco.readthedocs.io/en/stable/python.html#passive-viewer).
+Docker uses http://localhost:8080 (**Play**, **Reset**); Mac opens the native viewer (**Enter** resets, **Space** pauses). Add `--web` on Mac for the browser, or `--check` for a headless no-fall check. A direct ONNX/ZIP URL or a policy folder also works.
+
+**Current workshop exports:** the mjlab tracking ONNX contains the reference motion and metadata. The player reads joint order, gains, action scale and observations automatically. K1 resources and timing/motor defaults come from the [pinned training source](https://github.com/IntelligentRoboticsLab/booster_mjlab/tree/d92e11395d961096d639446c0a8a176f12bb51da/src/booster_mjlab/robots/booster_k1). Unsupported layouts fail explicitly; unrelated ONNX files and raw training `.pt`/`.pth` checkpoints cannot be substituted.
+
+**Older exports:** keep `config.json`, the matching reference and robot folder together. You can point to the ONNX within that original folder; the player finds its sidecars. Bundles stay in ignored `data/policies/`; downloaded Python scripts are never executed. No body-model accounts, Isaac Lab, ROS or CUDA are needed for playback.
+
+Examples on the organizer's Mac (download these files separately; they are not in Git):
+
+```bash
+# Legacy cartwheel: uses the supplied settings and reference beside the ONNX
+./sim play ~/Downloads/Booster-K1-Cartwheel-MuJoCo/policies/final_29999/policy.onnx
+# Current workshop export: motion and settings are inside the ONNX
+./sim play ~/Downloads/policy-7c5a3e31/policy.onnx
+```
+
+The cartwheel performs a standing start, cartwheel and standing finish. The second file is an iteration-0 export used to verify the format; it falls in simulation and is not a trained demo. For sharing a legacy bundle: `./sim import ~/Downloads/Booster-K1-Cartwheel-MuJoCo --name cartwheel`, then `./sim pack cartwheel --output data/exports/booster-k1-cartwheel.zip`. See [Booster's MuJoCo instructions](https://docs.booster.tech/docs/developer-guide/open-source/booster-deploy/) and [MuJoCo's Mac launcher documentation](https://mujoco.readthedocs.io/en/stable/python.html#passive-viewer).
 
 The supplied `final_29999` export completes its 10.24 s headless Mac check and returns upright without a fall on MuJoCo 3.16.0. Docker build/run still requires validation with a working Docker Engine.
 
