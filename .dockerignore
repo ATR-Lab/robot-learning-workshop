@@ -2,3 +2,6 @@ data
 .git
 .env
 __pycache__
+.venv
+.venv-sim
+tmp

@@ -23,7 +23,7 @@ cd robot-learning-workshop
 
 ### ④ Run
 
-Put a short, stationary-camera video in `data/inputs/clip.mp4`.
+Put a short, stationary-camera **30 fps** video in `data/inputs/clip.mp4`.
 
 **Docker**
 ```bash
@@ -36,6 +36,20 @@ gvhmr demo data/inputs/clip.mp4 -s --no-render -o data/outputs
 ```
 
 Results: **`data/outputs/clip/`**. Send the clip's results to the workshop team for server processing and training.
+
+### ⑤ Run individual stages
+
+```bash
+# GVHMR · Mac, with .venv activated
+gvhmr demo data/inputs/clip.mp4 -s --no-render -o data/outputs
+# GMR → Booster K1 · NVIDIA Docker, using a 30 fps GVHMR result
+./workshop retarget data/outputs/clip/hmr4d_results.pt --clip clip
+# Trained policy → MuJoCo · Mac; use a complete policy ZIP or its download URL
+./sim play "POLICY_ZIP_OR_URL"
+```
+
+MuJoCo is included in `./setup.sh` on Mac and Docker. Existing installs: `./setup.sh --sim-only`.
+On Ubuntu/Windows WSL, use `./sim --docker play "POLICY_ZIP_OR_URL"`, then open **http://localhost:8080** and press **Play**. No NVIDIA GPU is needed for policy playback. [Bundle details](docs/setup-details.md#mujoco-policy-playback).
 
 ---
 

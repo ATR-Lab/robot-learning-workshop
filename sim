@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+ROOT="$(cd -- "$(dirname -- "$0")" && pwd)"
+
+if [[ "${1:-}" == --docker ]]; then
+    shift
+    cd "$ROOT"
+    command -v docker >/dev/null || { echo 'Install Docker and Compose first.' >&2; exit 1; }
+    if [[ "${1:-}" == setup ]]; then
+        exec docker compose build sim
+    fi
+    ports=()
+    if [[ "${1:-}" == play && " $* " != *' --check '* && " $* " != *' --record '* ]]; then
+        ports=(--service-ports)
+    fi
+    exec docker compose run --rm "${ports[@]}" sim "$@"
+fi
+
+if [[ "${1:-}" == setup ]]; then
+    if [[ -n "${SIM_PYTHON:-}" ]]; then
+        python="$SIM_PYTHON"
+    elif command -v python3.12 >/dev/null; then
+        python=python3.12
+    else
+        python=python3
+    fi
+    "$python" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 12) else "MuJoCo setup needs Python 3.12+. Install it, or use ./sim --docker setup.")'
+    "$python" -m venv "$ROOT/.venv-sim"
+    "$ROOT/.venv-sim/bin/python" -m pip install -r "$ROOT/requirements/sim.txt"
+    "$ROOT/.venv-sim/bin/python" -m pip check
+    echo 'Ready. Import a policy bundle, then run: ./sim play NAME'
+    exit 0
+fi
+
+if [[ -x "$ROOT/.venv-sim/bin/python" ]]; then
+    exec "$ROOT/.venv-sim/bin/python" "$ROOT/scripts/sim.py" "$@"
+elif [[ "${1:-}" == import || "${1:-}" == pack || "${1:---help}" == --help ]]; then
+    exec python3 "$ROOT/scripts/sim.py" "$@"
+else
+    echo 'Run ./sim setup first, or use ./sim --docker setup.' >&2
+    exit 1
+fi

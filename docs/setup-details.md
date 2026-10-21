@@ -58,6 +58,16 @@ Other commands:
 
 Run `git pull` for new workshop scripts. Run `./workshop build` only when dependencies/Dockerfile change. Data persists between containers. Organizers can distribute a tested image using `WORKSHOP_IMAGE=registry/image:version ./setup.sh` to avoid participant builds; no prebuilt image is published yet.
 
+## MuJoCo policy playback
+
+`./setup.sh` installs MuJoCo in its own environment/image. `./setup.sh --sim-only` installs just the player. Run `./sim play "POLICY_ZIP_OR_URL"` on Mac, or `./sim --docker play "POLICY_ZIP_OR_URL"` on Ubuntu/WSL. Docker uses http://localhost:8080 (**Play**, **Reset**); Mac opens the native viewer (**Enter** resets, **Space** pauses). Add `--web` on Mac for the browser, or `--check` for a headless completion check.
+
+Use a **complete K1 tracking export**: `policy.onnx`, matching `motion.npz`, `config.json` (22 joints, 119/125 observations, timing and PD gains), and robot XML with meshes at the configured relative paths. A raw training `.pt`/`.pth` or unrelated ONNX is insufficient. ZIP links must point directly to the file; local folders and ZIPs work too. Imported bundles stay in ignored `data/policies/`; downloaded Python scripts are never executed. Policy playback needs no body models, Isaac Lab, ROS or CUDA.
+
+Local example: `~/Downloads/Booster-K1-Cartwheel-MuJoCo`. To share it: `./sim import ~/Downloads/Booster-K1-Cartwheel-MuJoCo --name cartwheel`, then `./sim pack cartwheel --output data/exports/booster-k1-cartwheel.zip`. Share the ZIP or a direct download URL; keep private exports out of Git. See [Booster's MuJoCo instructions](https://docs.booster.tech/docs/developer-guide/open-source/booster-deploy/) and [MuJoCo's Mac launcher documentation](https://mujoco.readthedocs.io/en/stable/python.html#passive-viewer).
+
+The supplied `final_29999` export completes its 10.24 s headless Mac check and returns upright without a fall on MuJoCo 3.16.0. Docker build/run still requires validation with a working Docker Engine.
+
 ## Mac and status
 
 On Apple Silicon, keep using native GVHMR for Apple GPU acceleration; Docker on Mac does not provide CUDA. This Docker setup targets Linux + NVIDIA, including Ubuntu under WSL 2.
