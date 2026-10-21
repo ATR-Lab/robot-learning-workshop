@@ -9,10 +9,13 @@ import shutil
 import subprocess
 import sys
 
-ROOT = Path('/workspace')
+NATIVE = os.environ.get('WORKSHOP_NATIVE') == '1'
+ROOT = Path(__file__).resolve().parents[1] if NATIVE else Path('/workspace')
 DATA = ROOT / 'data'
 PIPELINE = Path('/opt/pipeline')
 PYTHONS = {name: Path('/opt') / name / 'bin/python' for name in ('gvhmr', 'gmr')}
+if NATIVE:
+    PYTHONS['gvhmr'] = ROOT / '.venv/bin/python'
 
 
 def run(command, *, cwd=ROOT, log=None):
@@ -39,9 +42,9 @@ def clip_name(value):
     return value
 
 
-def data_file(value):
+def data_file(value, *, allow_external=False):
     path = Path(value).resolve()
-    if not path.is_relative_to(DATA.resolve()):
+    if not allow_external and not path.is_relative_to(DATA.resolve()):
         raise ValueError('Put the input inside this repository’s data/ directory.')
     if not path.is_file():
         raise FileNotFoundError(path)
@@ -63,7 +66,9 @@ def doctor():
 
 
 def convert(video, clip):
-    video = data_file(video)
+    video = data_file(video, allow_external=NATIVE)
+    if not shutil.which('ffmpeg') or not shutil.which('ffprobe'):
+        raise RuntimeError('FFmpeg/ffprobe are missing. Rerun ./setup.sh.')
     inferred = re.sub(r'[^A-Za-z0-9_]', '_', video.stem)
     if not inferred or not inferred[0].isalpha():
         inferred = 'clip_' + inferred
@@ -71,7 +76,11 @@ def convert(video, clip):
     folder = DATA / 'outputs' / clip
     folder.mkdir(parents=True, exist_ok=True)
     staged = folder / 'input.mp4'
-    run(['ffmpeg', '-y', '-i', video, '-an', '-vf', 'fps=30', '-c:v', 'libx264', staged],
+    if video == staged.resolve():
+        raise ValueError('Use the original video as input, not the generated outputs/<clip>/input.mp4.')
+    run(['ffmpeg', '-nostdin', '-y', '-v', 'error', '-xerror', '-i', video,
+         '-map', '0:v:0', '-an', '-vf', 'fps=30', '-c:v', 'libx264',
+         '-pix_fmt', 'yuv420p', '-movflags', '+faststart', staged],
         log=folder / 'logs/resample.log')
     prediction = folder / 'gvhmr/hmr4d_results.pt'
     prediction.parent.mkdir(parents=True, exist_ok=True)
@@ -82,11 +91,16 @@ def convert(video, clip):
 
 
 def process(video, clip):
+    if NATIVE:
+        raise RuntimeError('On Mac use ./workshop convert <video>; GMR → CSV runs on the NVIDIA/Linux server.')
     prediction, clip = convert(video, clip)
     retarget(prediction, clip)
 
 
 def retarget(prediction, clip):
+    if NATIVE:
+        raise RuntimeError('GMR → CSV requires the NVIDIA/Linux workshop server. '
+                           'Copy the .pt there and run ./workshop retarget <path-to-pt> --clip ' + clip)
     prediction = data_file(prediction)
     folder = DATA / 'outputs' / clip
     robot_data = folder / 'robot_data/booster_k1'
@@ -131,9 +145,13 @@ def main(argv=None):
         run(['/opt/gvhmr/bin/gvhmr', 'auth', 'smpl'])
         run(['/opt/gvhmr/bin/gvhmr', 'info'])
     elif args.command == 'doctor':
+        if NATIVE:
+            run([PYTHONS['gvhmr'], '-m', 'pip', 'check'])
+            run([ROOT / '.venv/bin/gvhmr', 'info'])
+            return
         doctor()
     elif args.command == 'info':
-        run(['/opt/gvhmr/bin/gvhmr', 'info'])
+        run([PYTHONS['gvhmr'].parent / 'gvhmr', 'info'])
     elif args.command == 'shell':
         os.execvp('/bin/bash', ['/bin/bash'])
     elif args.command == 'convert':

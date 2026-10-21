@@ -11,6 +11,21 @@ spec.loader.exec_module(w)
 
 
 class PipelineTest(unittest.TestCase):
+    def test_native_conversion_uses_local_env_and_same_output_path(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            video = root / 'dance.mp4'
+            video.touch()
+            python = root / '.venv/bin/python'
+            with patch.multiple(w, NATIVE=True, ROOT=root, DATA=root / 'data',
+                                PYTHONS={'gvhmr': python}), \
+                    patch.object(w.shutil, 'which', return_value='/usr/bin/ffmpeg'), \
+                    patch.object(w, 'run') as run:
+                prediction, clip = w.convert(video, None)
+            self.assertEqual(prediction, root / 'data/outputs/dance/gvhmr/hmr4d_results.pt')
+            self.assertEqual(run.call_args_list[1].args[0][0], python)
+            self.assertIn('yuv420p', run.call_args_list[0].args[0])
+
     def test_convert_does_not_retarget_or_require_robot_models(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

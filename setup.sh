@@ -8,6 +8,13 @@ mkdir -p data/inputs data/outputs data/policies
 if [[ "$(uname -s)" == Darwin ]]; then
     ./sim setup
     [[ "${1:-}" != --sim-only ]] || exit 0
+    if ! command -v ffmpeg >/dev/null || ! command -v ffprobe >/dev/null; then
+        brew_cmd="$(command -v brew || true)"
+        [[ -n "$brew_cmd" || ! -x /opt/homebrew/bin/brew ]] || brew_cmd=/opt/homebrew/bin/brew
+        [[ -n "$brew_cmd" ]] || { echo 'Install Homebrew (https://brew.sh), then rerun ./setup.sh to install FFmpeg.' >&2; exit 1; }
+        "$brew_cmd" install ffmpeg
+        export PATH="$("$brew_cmd" --prefix)/bin:$PATH"
+    fi
     WORKSHOP_PYTHON="$ROOT/.venv-sim/bin/python"
     ensure_python312_env "$ROOT/.venv"
     .venv/bin/python -m pip install 'setuptools<81' wheel 'numpy==1.26.4'
@@ -20,7 +27,7 @@ if [[ "$(uname -s)" == Darwin ]]; then
         .venv/bin/gvhmr auth smpl
     fi
     .venv/bin/gvhmr info
-    echo 'Ready. Convert: ./gvhmr demo data/inputs/clip.mp4 -s --no-render -o data/outputs'
+    echo 'Ready. Convert: ./workshop convert data/inputs/clip.mp4'
     exit 0
 fi
 if [[ "${1:-}" == --sim-only ]]; then

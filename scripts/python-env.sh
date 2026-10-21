@@ -2,6 +2,10 @@
 # Shared native setup. Never inherit packages from an activated, unrelated env.
 unset PYTHONHOME PYTHONPATH
 export PYTHONNOUSERSITE=1
+for workshop_bin in /opt/homebrew/bin /usr/local/bin; do
+    [[ ! -d "$workshop_bin" ]] || export PATH="$PATH:$workshop_bin"
+done
+unset workshop_bin
 
 is_python312() {
     [[ -x "$1" ]] && "$1" -c 'import sys; sys.exit(sys.version_info[:2] != (3, 12))' >/dev/null 2>&1

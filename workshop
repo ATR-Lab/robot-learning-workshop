@@ -1,6 +1,25 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 cd "$(dirname "$0")"
+case "${1:-}" in
+    play|demo)
+        action="$1"; shift
+        [[ "$action" != demo ]] || set -- examples/cartwheel "$@"
+        if [[ "$(uname -s)" == Darwin ]]; then
+            exec ./sim play "$@"
+        else
+            exec ./sim --docker play "$@"
+        fi
+        ;;
+esac
+if [[ "$(uname -s)" == Darwin ]]; then
+    [[ "${1:-}" != setup ]] || exec ./setup.sh
+    ROOT="$PWD"
+    source "$ROOT/scripts/python-env.sh"
+    is_python312 "$ROOT/.venv/bin/python" || { echo 'Run ./setup.sh first.' >&2; exit 1; }
+    export WORKSHOP_NATIVE=1
+    exec "$ROOT/.venv/bin/python" "$ROOT/scripts/workshop.py" "$@"
+fi
 command -v docker >/dev/null || { echo 'Install Docker Engine and Compose: see README.md' >&2; exit 1; }
 docker compose version >/dev/null
 if [[ "${1:-}" == build ]]; then

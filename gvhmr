@@ -6,4 +6,4 @@ if ! is_python312 "$ROOT/.venv/bin/python" || [[ ! -x "$ROOT/.venv/bin/gvhmr" ]]
     echo 'Run ./setup.sh first (or rerun it to repair the GVHMR environment).' >&2
     exit 1
 fi
-exec "$ROOT/.venv/bin/gvhmr" "$@"
+exec "$ROOT/.venv/bin/python" "$ROOT/scripts/gvhmr_cli.py" "$@"
