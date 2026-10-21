@@ -19,14 +19,18 @@ cd robot-learning-workshop
 
 | Windows / Ubuntu · NVIDIA GPU | Mac · Apple Silicon |
 | :--- | :--- |
-| Install [Docker + GPU support](docs/docker.md). | Install [Python 3.12](docs/macos.md). No Docker needed. |
+| Install [Docker + GPU support](docs/docker.md). | Install [Homebrew](docs/macos.md) if needed. No Docker needed. |
 
-Then, on either setup:
+`setup.sh` chooses automatically: **Mac → local `.venv` (GVHMR) and `.venv-sim` (MuJoCo); Linux / Windows WSL → Docker containers (GVHMR, GMR → CSV, MuJoCo).** Mac users use a workshop server for GMR → CSV. Docker keeps the dependencies inside containers instead of local Python environments.
+
+Then, on either setup, run once:
 ```bash
 ./setup.sh
 ```
 
 No Docker login or container shell is needed. Run commands in your normal terminal; on Windows, use Ubuntu/WSL. Docker users do not activate a venv.
+
+**Already installed?** Run `git pull`, then `./setup.sh` again. On Mac it installs Python 3.12 if needed and repairs both environments; incompatible old environments are saved under `data/environment-backups/`. Inputs, outputs and saved logins are kept.
 
 Run all commands below from this repository's folder.
 
@@ -37,8 +41,7 @@ For a Docker test, [download GVHMR's tennis clip](https://raw.githubusercontent.
 
 **Mac**
 ```bash
-source .venv/bin/activate
-gvhmr demo data/inputs/clip.mp4 -s --no-render -o data/outputs
+./gvhmr demo data/inputs/clip.mp4 -s --no-render -o data/outputs
 ```
 
 **Docker**
@@ -63,7 +66,6 @@ Save the workshop policy as **`data/policies/policy.onnx`**. Setup prepares K1 a
 
 **Mac**
 ```bash
-source .venv-sim/bin/activate
 ./sim play data/policies/policy.onnx
 ```
 **Enter** restarts; **Space** pauses.
@@ -73,6 +75,8 @@ source .venv-sim/bin/activate
 ./sim --docker play data/policies/policy.onnx
 ```
 Open **http://localhost:8080** and press **Play**.
+
+Mac launchers select their own Python 3.12 environment automatically. For manual use: `source .venv/bin/activate` for GVHMR or `source .venv-sim/bin/activate` for MuJoCo. After rerunning setup, deactivate/reactivate any old terminal environment before using bare `gvhmr`.
 
 [Example policies and more details](docs/setup-details.md#mujoco-policy-playback). Policy weights are provided separately.
 

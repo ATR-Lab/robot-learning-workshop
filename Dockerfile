@@ -1,6 +1,6 @@
 # One Linux/RTX image; separate Python environments isolate dependency pins.
 FROM python:3.11.11-slim-bookworm
-ENV DEBIAN_FRONTEND=noninteractive PIP_NO_CACHE_DIR=1 PYTHONUNBUFFERED=1
+ENV DEBIAN_FRONTEND=noninteractive PIP_NO_CACHE_DIR=1 PYTHONUNBUFFERED=1 PYTHONNOUSERSITE=1
 RUN apt-get update && apt-get install -y --no-install-recommends git build-essential cmake ffmpeg libgl1 libegl1 libglib2.0-0 libgomp1 libx11-6 libxext6 libxrender1 libxi6 libxrandr2 libxcursor1 libxinerama1 libsm6 libice6 libvulkan1 libnss3 libasound2 libxt6 libglu1-mesa ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY requirements/constraints.txt /opt/constraints.txt
 ENV PIP_CONSTRAINT=/opt/constraints.txt
@@ -12,5 +12,5 @@ RUN /opt/gmr/bin/pip install 'setuptools<81' wheel toml cython 'numpy==1.26.4' &
 # Fail the build on inconsistent Python dependencies; no checkpoints in the image.
 RUN /opt/gvhmr/bin/pip check && /opt/gmr/bin/pip check
 WORKDIR /workspace
-ENTRYPOINT ["python", "/workspace/scripts/workshop.py"]
+ENTRYPOINT ["/usr/local/bin/python", "/workspace/scripts/workshop.py"]
 CMD ["--help"]

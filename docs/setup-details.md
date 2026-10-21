@@ -67,7 +67,6 @@ Run `git pull` for new workshop scripts. Run `./workshop build` only when depend
 
 ```bash
 # Mac
-source .venv-sim/bin/activate
 ./sim play data/policies/policy.onnx
 # Ubuntu / Windows WSL
 ./sim --docker play data/policies/policy.onnx

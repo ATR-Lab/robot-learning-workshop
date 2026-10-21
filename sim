@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 ROOT="$(cd -- "$(dirname -- "$0")" && pwd)"
+source "$ROOT/scripts/python-env.sh"
 
 if [[ "${1:-}" == --docker ]]; then
     shift
@@ -17,15 +18,8 @@ if [[ "${1:-}" == --docker ]]; then
 fi
 
 if [[ "${1:-}" == setup ]]; then
-    if [[ -n "${SIM_PYTHON:-}" ]]; then
-        python="$SIM_PYTHON"
-    elif command -v python3.12 >/dev/null; then
-        python=python3.12
-    else
-        python=python3
-    fi
-    "$python" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 12) else "MuJoCo setup needs Python 3.12+. Install it, or use ./sim --docker setup.")'
-    "$python" -m venv "$ROOT/.venv-sim"
+    select_python312
+    ensure_python312_env "$ROOT/.venv-sim"
     "$ROOT/.venv-sim/bin/python" -m pip install -r "$ROOT/requirements/sim.txt"
     "$ROOT/.venv-sim/bin/python" -m pip check
     "$ROOT/.venv-sim/bin/python" "$ROOT/scripts/prepare_policy.py" --assets
@@ -34,6 +28,7 @@ if [[ "${1:-}" == setup ]]; then
 fi
 
 if [[ -x "$ROOT/.venv-sim/bin/python" ]]; then
+    is_python312 "$ROOT/.venv-sim/bin/python" || { echo 'Run ./setup.sh again to repair the MuJoCo environment (Python 3.12 required).' >&2; exit 1; }
     exec "$ROOT/.venv-sim/bin/python" "$ROOT/scripts/sim.py" "$@"
 elif [[ "${1:-}" == import || "${1:-}" == pack || "${1:---help}" == --help ]]; then
     exec python3 "$ROOT/scripts/sim.py" "$@"
