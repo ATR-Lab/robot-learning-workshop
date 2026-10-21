@@ -2,7 +2,7 @@
 
 **Your video → human motion → robot motion. Training happens on workshop servers.**
 
-[Watch the K1 cartwheel reference video](docs/examples/cartwheel_final_29999.mp4) — an example MuJoCo result.
+[Watch the K1 cartwheel reference video](docs/examples/cartwheel_final_29999.mp4). A complete runnable [cartwheel example](examples/cartwheel) is included: policy, reference motion, K1 model and CSVs.
 
 ### ① Register
 
@@ -62,6 +62,12 @@ Result: **`data/outputs/clip/clip.csv`**. Mac users send their `.pt` to the work
 
 ### ⑥ Run policy · MuJoCo
 
+**Try the included cartwheel first** — no separate downloads:
+```bash
+./sim play examples/cartwheel
+```
+For Docker: `./sim --docker play examples/cartwheel`, then open **http://localhost:8080** and press **Play**.
+
 Save the workshop policy as **`data/policies/policy.onnx`**. Setup prepares K1 automatically; the workshop ONNX supplies its settings and motion.
 
 **Mac**
@@ -78,6 +84,6 @@ Open **http://localhost:8080** and press **Play**.
 
 Mac launchers select their own Python 3.12 environment automatically. For manual use: `source .venv/bin/activate` for GVHMR or `source .venv-sim/bin/activate` for MuJoCo. After rerunning setup, deactivate/reactivate any old terminal environment before using bare `gvhmr`.
 
-[Example policies and more details](docs/setup-details.md#mujoco-policy-playback). Policy weights are provided separately.
+[More policy details](docs/setup-details.md#mujoco-policy-playback). Your own trained policies are provided separately.
 
 **Update:** `git pull` · **Privacy:** inputs, models and private policies stay out of Git. Docker runtime validation is pending.

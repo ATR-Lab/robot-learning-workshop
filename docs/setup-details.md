@@ -78,7 +78,13 @@ Docker uses http://localhost:8080 (**Play**, **Reset**); Mac opens the native vi
 
 **Older exports:** keep `config.json`, the matching reference and robot folder together. You can point to the ONNX within that original folder; the player finds its sidecars. Bundles stay in ignored `data/policies/`; downloaded Python scripts are never executed. No body-model accounts, Isaac Lab, ROS or CUDA are needed for playback.
 
-Examples on the organizer's Mac (download these files separately; they are not in Git):
+The complete cartwheel example is included in Git:
+
+```bash
+./sim play examples/cartwheel
+```
+
+Other exports on the organizer's Mac (download separately):
 
 ```bash
 # Legacy cartwheel: uses the supplied settings and reference beside the ONNX
