@@ -3,7 +3,7 @@ set -Eeuo pipefail
 cd "$(dirname "$0")"
 ROOT="$PWD"
 source "$ROOT/scripts/python-env.sh"
-[[ $# -eq 0 || ( $# -eq 1 && "$1" == --sim-only ) ]] || { echo 'Usage: ./setup.sh [--sim-only]' >&2; exit 1; }
+[[ $# -eq 0 || ( $# -eq 1 && ( "$1" == --sim-only || "$1" == --deps-only ) ) ]] || { echo 'Usage: ./setup.sh [--deps-only | --sim-only]' >&2; exit 1; }
 mkdir -p data/inputs data/outputs data/policies
 if [[ "$(uname -s)" == Darwin ]]; then
     ./sim setup
@@ -21,7 +21,10 @@ if [[ "$(uname -s)" == Darwin ]]; then
     .venv/bin/python -m pip install --no-build-isolation chumpy==0.70
     .venv/bin/python -m pip install 'gvhmr[preproc]==1.6.1'
     .venv/bin/python -m pip check
-    if [[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/gvhmr/smpl_credentials.toml" ]]; then
+    if [[ "${1:-}" == --deps-only ]]; then
+        echo 'Dependencies ready. Before conversion, run: ./workshop auth (SMPL-X and SMPL accounts).'
+        exit 0
+    elif [[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/gvhmr/smpl_credentials.toml" ]]; then
         echo 'Keeping saved SMPL/SMPL-X logins. To change them: ./gvhmr auth smpl --no-fetch'
     else
         .venv/bin/gvhmr auth smpl
@@ -46,6 +49,10 @@ else
     docker compose build
 fi
 ./workshop doctor
+if [[ "${1:-}" == --deps-only ]]; then
+    echo 'Dependencies ready. Before conversion, run: ./workshop auth (SMPL-X and SMPL accounts).'
+    exit 0
+fi
 if [[ -f data/home/.config/gvhmr/smpl_credentials.toml ]]; then
     echo 'Keeping saved SMPL/SMPL-X logins. To change them: ./workshop setup'
     ./workshop info

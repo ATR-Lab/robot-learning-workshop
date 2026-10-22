@@ -21,10 +21,11 @@ On **Windows**, install the NVIDIA Windows driver and [Docker Desktop with WSL 2
 Check `nvidia-smi` and `docker info`, then run:
 
 ```bash
-./setup.sh
+./setup.sh --deps-only
+./workshop auth
 ```
 
-Setup builds the image, checks CUDA, and asks for your SMPL/SMPL-X logins. No host Python or Conda installation needed. Allow several GB for models plus space for the Docker image. Credentials and models stay in ignored `data/`; do not share that folder wholesale.
+Setup builds the images and checks CUDA; `auth` separately asks for **both SMPL-X and SMPL** logins. Repeat `./workshop auth` to change accounts. No host Python/Conda is needed. Allow **60 GB free** as a first-install planning allowance, including images/cache, about 6 GB of models, and outputs. Check the Docker storage disk too. Credentials and models stay in ignored `data/`; do not share that folder wholesale. See the [step-by-step Docker/Toolkit/runtime installation](docker.md).
 
 ## Option 2 · macOS (Apple Silicon)
 
@@ -59,7 +60,7 @@ Other commands:
 
 ## Update
 
-Run `git pull` for new workshop scripts. Run `./workshop build` only when dependencies/Dockerfile change. Data persists between containers. Organizers can distribute a tested image using `WORKSHOP_IMAGE=registry/image:version ./setup.sh` to avoid participant builds; no prebuilt image is published yet.
+Run `git pull`, then `./setup.sh --deps-only` when dependencies/Dockerfiles change. Data persists between containers. GVHMR and GMR have separate stage packages and share one pinned Torch/CUDA installation to avoid duplicating several GB. Organizers can distribute a tested image using `WORKSHOP_IMAGE=registry/image:version ./setup.sh --deps-only`; no prebuilt image is published yet.
 
 ## MuJoCo policy playback
 
@@ -95,13 +96,13 @@ Other exports on the organizer's Mac (download separately):
 
 The cartwheel performs a standing start, cartwheel and standing finish. The second file is an iteration-0 export used to verify the format; it falls in simulation and is not a trained demo. For sharing a legacy bundle: `./sim import ~/Downloads/Booster-K1-Cartwheel-MuJoCo --name cartwheel`, then `./sim pack cartwheel --output data/exports/booster-k1-cartwheel.zip`. See [Booster's MuJoCo instructions](https://docs.booster.tech/docs/developer-guide/open-source/booster-deploy/) and [MuJoCo's Mac launcher documentation](https://mujoco.readthedocs.io/en/stable/python.html#passive-viewer).
 
-The supplied `final_29999` export completes its 10.24 s headless Mac check and returns upright without a fall on MuJoCo 3.16.0. Docker build/run still requires validation with a working Docker Engine.
+The supplied `final_29999` export completes its 10.24 s headless Mac and Ubuntu/Docker checks and returns upright without falling on MuJoCo 3.16.0. Docker rendering and the browser endpoint were also checked. See [validation results](validation.md).
 
 ## Mac and status
 
 On Apple Silicon, keep using native GVHMR for Apple GPU acceleration; Docker on Mac does not provide CUDA. This Docker setup targets Linux + NVIDIA, including Ubuntu under WSL 2.
 
-**Initial implementation: the image and full pipeline still need validation on an NVIDIA machine before the workshop.** Local orchestration tests do not exercise inference or retargeting. Windows/WSL 2 is also pending validation.
+The full **Ubuntu + NVIDIA Docker pipeline is validated** on the tennis sample: GVHMR → GMR → CSV. Windows/WSL2 and a complete native Mac GVHMR run remain unverified. See the [tested versions, commands and limits](validation.md).
 
 ## Credits
 

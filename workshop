@@ -14,6 +14,10 @@ case "${1:-}" in
 esac
 if [[ "$(uname -s)" == Darwin ]]; then
     [[ "${1:-}" != setup ]] || exec ./setup.sh
+    if [[ "${1:-}" == auth ]]; then
+        shift
+        exec ./gvhmr auth smpl "$@"
+    fi
     ROOT="$PWD"
     source "$ROOT/scripts/python-env.sh"
     is_python312 "$ROOT/.venv/bin/python" || { echo 'Run ./setup.sh first.' >&2; exit 1; }
@@ -25,5 +29,5 @@ docker compose version >/dev/null
 if [[ "${1:-}" == build ]]; then
     exec docker compose build
 fi
-mkdir -p data/{inputs,outputs,body_models,cache,home}
+mkdir -p data/{inputs,outputs,body_models,checkpoints,cache,home}
 exec docker compose run --rm workshop "$@"

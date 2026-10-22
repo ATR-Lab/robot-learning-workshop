@@ -24,6 +24,6 @@ CSV columns: time in seconds, root position in metres, quaternion (`w,x,y,z`), 2
 This is a MuJoCo policy example; the robot video is not a human-video input for GVHMR. No training checkpoint or original human video is required to run it.
 
 Headless check: `./sim play examples/cartwheel --check`.
-The supplied policy completes the 10.24-second Mac check without falling on MuJoCo 3.16.0. Docker runtime verification is pending.
+The supplied policy completes the 10.24-second Mac and Ubuntu/Docker checks without falling on MuJoCo 3.16.0.
 
 Robot model and meshes originate from the Booster K1 assets supplied with the training setup. Policy: readiness_v5 warm119, checkpoint 29999.

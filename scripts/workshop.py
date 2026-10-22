@@ -2,12 +2,14 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import os
 from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 
 NATIVE = os.environ.get('WORKSHOP_NATIVE') == '1'
 ROOT = Path(__file__).resolve().parents[1] if NATIVE else Path('/workspace')
@@ -78,10 +80,22 @@ def convert(video, clip):
     staged = folder / 'input.mp4'
     if video == staged.resolve():
         raise ValueError('Use the original video as input, not the generated outputs/<clip>/input.mp4.')
+    with video.open('rb') as source:
+        digest = hashlib.file_digest(source, 'sha256').hexdigest()
+    signature = folder / 'source.sha256'
+    if not signature.exists() or signature.read_text().strip() != digest:
+        artifacts = [folder / name for name in ('gvhmr', 'robot_data', f'{clip}.csv', 'input.mp4', 'logs')]
+        if any(path.exists() for path in artifacts):
+            backup = Path(tempfile.mkdtemp(prefix='previous-', dir=folder))
+            for path in artifacts:
+                if path.exists():
+                    shutil.move(path, backup / path.name)
+            print(f'Input changed; previous results saved in {backup}', flush=True)
     run(['ffmpeg', '-nostdin', '-y', '-v', 'error', '-xerror', '-i', video,
          '-map', '0:v:0', '-an', '-vf', 'fps=30', '-c:v', 'libx264',
          '-pix_fmt', 'yuv420p', '-movflags', '+faststart', staged],
         log=folder / 'logs/resample.log')
+    signature.write_text(digest + '\n')
     prediction = folder / 'gvhmr/hmr4d_results.pt'
     prediction.parent.mkdir(parents=True, exist_ok=True)
     run([PYTHONS['gvhmr'], ROOT / 'scripts/recover.py', staged, prediction],
@@ -126,7 +140,7 @@ def retarget(prediction, clip):
 def main(argv=None):
     parser = argparse.ArgumentParser(description='Robot Learning Workshop: video → human motion → K1 motion export.')
     subs = parser.add_subparsers(dest='command', required=True)
-    for name in ('setup', 'doctor', 'info', 'shell'):
+    for name in ('setup', 'auth', 'doctor', 'info', 'shell'):
         subs.add_parser(name)
     for name, help_text in (
         ('convert', 'GVHMR only: video → human motion at 30 fps.'),
@@ -141,7 +155,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     for directory in ('inputs', 'outputs', 'cache', 'home', 'body_models'):
         (DATA / directory).mkdir(parents=True, exist_ok=True)
-    if args.command == 'setup':
+    if args.command in ('setup', 'auth'):
         run(['/opt/gvhmr/bin/gvhmr', 'auth', 'smpl'])
         run(['/opt/gvhmr/bin/gvhmr', 'info'])
     elif args.command == 'doctor':

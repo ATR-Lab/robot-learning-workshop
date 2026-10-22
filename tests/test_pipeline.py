@@ -11,6 +11,32 @@ spec.loader.exec_module(w)
 
 
 class PipelineTest(unittest.TestCase):
+    def test_changed_input_preserves_old_results_instead_of_reusing_them(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            video = root / 'data/inputs/clip.mp4'
+            video.parent.mkdir(parents=True)
+            video.write_bytes(b'new video')
+            folder = root / 'data/outputs/clip'
+            (folder / 'gvhmr').mkdir(parents=True)
+            (folder / 'gvhmr/hmr4d_results.pt').write_bytes(b'old motion')
+            (folder / 'source.sha256').write_text('old hash')
+            with patch.multiple(w, ROOT=root, DATA=root / 'data'), \
+                    patch.object(w.shutil, 'which', return_value='/usr/bin/ffmpeg'), \
+                    patch.object(w, 'run'):
+                w.convert(video, None)
+            backups = list(folder.glob('previous-*/gvhmr/hmr4d_results.pt'))
+            self.assertEqual(len(backups), 1)
+            self.assertEqual(backups[0].read_bytes(), b'old motion')
+            self.assertFalse((folder / 'gvhmr/hmr4d_results.pt').exists())
+
+    def test_auth_reconfigures_body_model_accounts(self):
+        with tempfile.TemporaryDirectory() as tmp, \
+                patch.object(w, 'DATA', Path(tmp)), patch.object(w, 'run') as run:
+            w.main(['auth'])
+        self.assertEqual(run.call_args_list[0].args[0], ['/opt/gvhmr/bin/gvhmr', 'auth', 'smpl'])
+        self.assertEqual(run.call_args_list[1].args[0], ['/opt/gvhmr/bin/gvhmr', 'info'])
+
     def test_native_conversion_uses_local_env_and_same_output_path(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

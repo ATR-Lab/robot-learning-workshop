@@ -365,7 +365,8 @@ if args.web:
         client.camera.look_at = (0.0, 0.0, 0.5)
 
     scene.update_from_mjdata(d)
-    print(f"Open http://localhost:{args.port} and press Play. Ctrl+C stops the server.", flush=True)
+    public_port = os.environ.get('SIM_PUBLIC_PORT', str(args.port))
+    print(f"Open http://localhost:{public_port} and press Play. Ctrl+C stops the server.", flush=True)
     try:
         while True:
             started = time.perf_counter()
