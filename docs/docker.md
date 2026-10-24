@@ -59,6 +59,8 @@ The container must list your GPU. `permission denied` on `docker.sock`: reconnec
 
 ## Windows · Docker Desktop + WSL2
 
+Short step-by-step version: [windows.md](windows.md).
+
 1. Install/update the **Windows NVIDIA driver**. In administrator PowerShell: `wsl --install -d Ubuntu`, then `wsl --update`; restart if prompted.
 2. Install [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/). Enable **Use the WSL 2 based engine** and **Resources → WSL Integration → Ubuntu**. Keep Desktop running.
 3. In the **Ubuntu terminal**, run `docker info`, `docker compose version`, and `docker run --rm --gpus all ubuntu:24.04 nvidia-smi`.

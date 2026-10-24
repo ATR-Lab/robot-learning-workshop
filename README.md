@@ -5,7 +5,7 @@
 ## Quick start
 
 Before you start: make two free accounts, at **[SMPL-X](https://smpl-x.is.tue.mpg.de/)** and at **[SMPL](https://smpl.is.tue.mpg.de/)**.
-You need **[Docker + NVIDIA GPU](docs/docker.md)** (Linux; Windows WSL 2 is [untested](docs/docker.md#windows--docker-desktop--wsl2)) or a **[Mac with Apple Silicon](docs/macos.md)**.
+You need **[Docker + NVIDIA GPU](docs/docker.md)** (Linux, or Windows: [short guide](docs/windows.md), untested) or a **[Mac with Apple Silicon](docs/macos.md)**.
 
 ```bash
 git clone https://github.com/ATR-Lab/robot-learning-workshop.git
