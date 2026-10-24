@@ -53,9 +53,8 @@ if [[ "${1:-}" == --deps-only ]]; then
     echo 'Dependencies ready. Before conversion, run: ./workshop auth (SMPL-X and SMPL accounts).'
     exit 0
 fi
-# Body models arrive with the login, so a saved login without them logs in again.
-if [[ -f data/home/.config/gvhmr/smpl_credentials.toml && -f data/body_models/smplx/SMPLX_NEUTRAL.npz \
-      && -f data/body_models/smpl/SMPL_NEUTRAL.pkl ]]; then
+# A saved login is enough: download fetches any missing body models with it.
+if [[ -f data/home/.config/gvhmr/smpl_credentials.toml ]]; then
     echo 'Keeping saved SMPL/SMPL-X logins. To change them: ./workshop auth'
     ./workshop download
 else

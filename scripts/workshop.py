@@ -91,7 +91,8 @@ def check():
 
 
 def download():
-    """Everything after login: checkpoints, the sample video, then a short readiness check."""
+    """Everything after login: body models, checkpoints, the sample video, then a short readiness check."""
+    run([PYTHONS['gvhmr'], ROOT / 'scripts/body_models.py'])
     gvhmr('download', 'demo')
     sample = DATA / 'inputs/tennis.mp4'
     if not sample.is_file():
@@ -184,7 +185,7 @@ def main(argv=None):
     for name, help_text in (
         ('setup', 'Same as auth.'),
         ('auth', 'SMPL-X + SMPL logins, then everything download does.'),
-        ('download', 'Checkpoints (about 6 GB) + sample video, then check. Skips existing files.'),
+        ('download', 'Body models (saved logins), checkpoints (about 6 GB), sample video, then check.'),
         ('check', 'Short ✓/✗ list of the models conversion needs.'),
         ('doctor', 'Check GPU and Python environments.'),
         ('info', 'Full GVHMR status (DPVO and data packs are not needed).'),

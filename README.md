@@ -15,7 +15,7 @@ cd robot-learning-workshop
 ./workshop demo                                # watch the K1 cartwheel in simulation
 ```
 
-Setup takes 20–40 minutes the first time and ends with **`Ready`**. `process` saves in **`data/outputs/tennis/`**: `tennis.csv` (K1 motion), `tennis_k1.mp4` (K1 animation) and `tennis_compare.mp4` (your video beside the K1).
+Setup takes 20–40 minutes the first time and ends with **`Ready`**. `process` saves in **`data/outputs/tennis/`**: `tennis.csv` (K1 motion), `tennis_k1.mp4` (K1 animation) and `tennis_compare.mp4` (your video beside the K1). Compare with the [expected result](examples/tennis).
 
 ## Your own video
 
@@ -48,4 +48,4 @@ Mac opens a viewer (**Enter** restart, **Space** pause). Docker prints a browser
 
 Disk space: about **60 GB** with Docker, **20 GB** on Mac. Passwords stay on your computer; never put them in chat or Git.
 
-**More:** [setup details and troubleshooting](docs/setup-details.md) · [Docker install](docs/docker.md) · [Mac](docs/macos.md) · [cartwheel example](examples/cartwheel) ([video](docs/examples/cartwheel_final_29999.mp4)) · [test results](docs/validation.md)
+**More:** [setup details and troubleshooting](docs/setup-details.md) · [Docker install](docs/docker.md) · [Mac](docs/macos.md) · [tennis example result](examples/tennis) · [cartwheel example](examples/cartwheel) ([video](docs/examples/cartwheel_final_29999.mp4)) · [test results](docs/validation.md)

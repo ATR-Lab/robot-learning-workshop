@@ -39,6 +39,7 @@ class PipelineTest(unittest.TestCase):
             self.assertEqual((Path(tmp) / 'inputs/tennis.mp4').read_bytes(), b'video')
         commands = [[str(arg) for arg in call.args[0]] for call in run.call_args_list]
         self.assertEqual(commands, [['/opt/gvhmr/bin/gvhmr', 'auth', 'smpl'],
+                                    ['/opt/gvhmr/bin/python', '/workspace/scripts/body_models.py'],
                                     ['/opt/gvhmr/bin/gvhmr', 'download', 'demo'],
                                     ['/opt/gvhmr/bin/python', '/workspace/scripts/ready.py']])
         fetch.assert_called_once()
