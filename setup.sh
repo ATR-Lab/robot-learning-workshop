@@ -29,8 +29,8 @@ if [[ "$(uname -s)" == Darwin ]]; then
     else
         .venv/bin/gvhmr auth smpl
     fi
-    .venv/bin/gvhmr info
-    echo 'Ready. Convert: ./workshop convert data/inputs/clip.mp4'
+    ./workshop download
+    echo 'Ready. Try: ./workshop convert data/inputs/tennis.mp4'
     exit 0
 fi
 if [[ "${1:-}" == --sim-only ]]; then
@@ -53,9 +53,12 @@ if [[ "${1:-}" == --deps-only ]]; then
     echo 'Dependencies ready. Before conversion, run: ./workshop auth (SMPL-X and SMPL accounts).'
     exit 0
 fi
-if [[ -f data/home/.config/gvhmr/smpl_credentials.toml ]]; then
-    echo 'Keeping saved SMPL/SMPL-X logins. To change them: ./workshop setup'
-    ./workshop info
+# Body models arrive with the login, so a saved login without them logs in again.
+if [[ -f data/home/.config/gvhmr/smpl_credentials.toml && -f data/body_models/smplx/SMPLX_NEUTRAL.npz \
+      && -f data/body_models/smpl/SMPL_NEUTRAL.pkl ]]; then
+    echo 'Keeping saved SMPL/SMPL-X logins. To change them: ./workshop auth'
+    ./workshop download
 else
-    ./workshop setup
+    ./workshop auth
 fi
+echo 'Ready. Try: ./workshop process data/inputs/tennis.mp4'

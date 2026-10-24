@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import urllib.request
 
 NATIVE = os.environ.get('WORKSHOP_NATIVE') == '1'
 ROOT = Path(__file__).resolve().parents[1] if NATIVE else Path('/workspace')
@@ -18,6 +19,8 @@ PIPELINE = Path('/opt/pipeline')
 PYTHONS = {name: Path('/opt') / name / 'bin/python' for name in ('gvhmr', 'gmr')}
 if NATIVE:
     PYTHONS['gvhmr'] = ROOT / '.venv/bin/python'
+SAMPLE = ('https://raw.githubusercontent.com/zju3dv/GVHMR/ee960bb6e2ea2d381aa97f08e9b71ef320b624b1/'
+          'docs/example_video/tennis.mp4')
 
 
 def run(command, *, cwd=ROOT, log=None):
@@ -49,7 +52,9 @@ def data_file(value, *, allow_external=False):
     if not allow_external and not path.is_relative_to(DATA.resolve()):
         raise ValueError('Put the input inside this repository’s data/ directory.')
     if not path.is_file():
-        raise FileNotFoundError(path)
+        shown = path.relative_to(ROOT) if path.is_relative_to(ROOT) else path
+        raise FileNotFoundError(f'No file at {shown}. Copy your video there first, or get the sample:\n'
+                                f'  curl -fL {SAMPLE} -o data/inputs/tennis.mp4')
     return path
 
 
@@ -65,6 +70,36 @@ def doctor():
         with (snapshots / f'{name}.txt').open('w') as out:
             subprocess.run([str(python), '-m', 'pip', 'freeze'], stdout=out, check=True)
     run([PYTHONS['gmr'], '-c', 'import general_motion_retargeting, mujoco; print("GMR imports OK")'])
+
+
+def gvhmr(*args):
+    run([PYTHONS['gvhmr'].parent / 'gvhmr', *args])
+
+
+def info():
+    gvhmr('info')
+    # GVHMR's own hint says `gvhmr download`, which only exists inside the environment.
+    print('\nWorkshop needs: body_models/smplx + smpl and the demo checkpoints (gvhmr, hmr2, vitpose, yolo).\n'
+          'Missing checkpoints: ./workshop download  ·  DPVO and the data packs are not needed.', flush=True)
+
+
+def check():
+    try:
+        run([PYTHONS['gvhmr'], ROOT / 'scripts/ready.py'])
+    except subprocess.CalledProcessError:
+        raise RuntimeError('Not ready yet: fix the ✗ items above, then rerun ./setup.sh.') from None
+
+
+def download():
+    """Everything after login: checkpoints, the sample video, then a short readiness check."""
+    gvhmr('download', 'demo')
+    sample = DATA / 'inputs/tennis.mp4'
+    if not sample.is_file():
+        print('Downloading sample video → data/inputs/tennis.mp4', flush=True)
+        partial = sample.with_suffix('.part')
+        urllib.request.urlretrieve(SAMPLE, partial)
+        partial.replace(sample)
+    check()
 
 
 def convert(video, clip):
@@ -140,8 +175,16 @@ def retarget(prediction, clip):
 def main(argv=None):
     parser = argparse.ArgumentParser(description='Robot Learning Workshop: video → human motion → K1 motion export.')
     subs = parser.add_subparsers(dest='command', required=True)
-    for name in ('setup', 'auth', 'doctor', 'info', 'shell'):
-        subs.add_parser(name)
+    for name, help_text in (
+        ('setup', 'Same as auth.'),
+        ('auth', 'SMPL-X + SMPL logins, then everything download does.'),
+        ('download', 'Checkpoints (about 6 GB) + sample video, then check. Skips existing files.'),
+        ('check', 'Short ✓/✗ list of the models conversion needs.'),
+        ('doctor', 'Check GPU and Python environments.'),
+        ('info', 'Full GVHMR status (DPVO and data packs are not needed).'),
+        ('shell', 'Open a shell inside the workshop container.'),
+    ):
+        subs.add_parser(name, help=help_text)
     for name, help_text in (
         ('convert', 'GVHMR only: video → human motion at 30 fps.'),
         ('process', 'GVHMR + GMR: video → K1 motion at 30 fps.'),
@@ -156,16 +199,20 @@ def main(argv=None):
     for directory in ('inputs', 'outputs', 'cache', 'home', 'body_models'):
         (DATA / directory).mkdir(parents=True, exist_ok=True)
     if args.command in ('setup', 'auth'):
-        run(['/opt/gvhmr/bin/gvhmr', 'auth', 'smpl'])
-        run(['/opt/gvhmr/bin/gvhmr', 'info'])
+        gvhmr('auth', 'smpl')
+        download()
+    elif args.command == 'download':
+        download()
+    elif args.command == 'check':
+        check()
     elif args.command == 'doctor':
         if NATIVE:
             run([PYTHONS['gvhmr'], '-m', 'pip', 'check'])
-            run([ROOT / '.venv/bin/gvhmr', 'info'])
+            gvhmr('info')
             return
         doctor()
     elif args.command == 'info':
-        run([PYTHONS['gvhmr'].parent / 'gvhmr', 'info'])
+        info()
     elif args.command == 'shell':
         os.execvp('/bin/bash', ['/bin/bash'])
     elif args.command == 'convert':
@@ -174,7 +221,6 @@ def main(argv=None):
         process(args.video, args.clip)
     elif args.command == 'retarget':
         retarget(args.prediction, args.clip)
-
 
 if __name__ == '__main__':
     try:

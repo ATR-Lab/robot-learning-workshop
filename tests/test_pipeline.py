@@ -30,12 +30,34 @@ class PipelineTest(unittest.TestCase):
             self.assertEqual(backups[0].read_bytes(), b'old motion')
             self.assertFalse((folder / 'gvhmr/hmr4d_results.pt').exists())
 
-    def test_auth_reconfigures_body_model_accounts(self):
+    def test_auth_logs_in_then_downloads_everything_and_checks(self):
         with tempfile.TemporaryDirectory() as tmp, \
-                patch.object(w, 'DATA', Path(tmp)), patch.object(w, 'run') as run:
+                patch.multiple(w, ROOT=Path('/workspace'), DATA=Path(tmp)), patch.object(w, 'run') as run, \
+                patch.object(w.urllib.request, 'urlretrieve',
+                             side_effect=lambda url, path: Path(path).write_bytes(b'video')) as fetch:
             w.main(['auth'])
-        self.assertEqual(run.call_args_list[0].args[0], ['/opt/gvhmr/bin/gvhmr', 'auth', 'smpl'])
-        self.assertEqual(run.call_args_list[1].args[0], ['/opt/gvhmr/bin/gvhmr', 'info'])
+            self.assertEqual((Path(tmp) / 'inputs/tennis.mp4').read_bytes(), b'video')
+        commands = [[str(arg) for arg in call.args[0]] for call in run.call_args_list]
+        self.assertEqual(commands, [['/opt/gvhmr/bin/gvhmr', 'auth', 'smpl'],
+                                    ['/opt/gvhmr/bin/gvhmr', 'download', 'demo'],
+                                    ['/opt/gvhmr/bin/python', '/workspace/scripts/ready.py']])
+        fetch.assert_called_once()
+
+    def test_download_keeps_existing_sample(self):
+        with tempfile.TemporaryDirectory() as tmp, \
+                patch.object(w, 'DATA', Path(tmp)), patch.object(w, 'run'), \
+                patch.object(w.urllib.request, 'urlretrieve') as fetch:
+            (Path(tmp) / 'inputs').mkdir()
+            (Path(tmp) / 'inputs/tennis.mp4').write_bytes(b'mine')
+            w.main(['download'])
+        fetch.assert_not_called()
+
+    def test_missing_video_explains_where_to_put_it(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with patch.multiple(w, ROOT=root, DATA=root / 'data'):
+                with self.assertRaisesRegex(FileNotFoundError, r'data/inputs/clip\.mp4[\s\S]*curl'):
+                    w.data_file(root / 'data/inputs/clip.mp4')
 
     def test_native_conversion_uses_local_env_and_same_output_path(self):
         with tempfile.TemporaryDirectory() as tmp:

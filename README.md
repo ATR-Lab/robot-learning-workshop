@@ -6,7 +6,7 @@
 
 ### ① Register
 
-For video conversion, create **two separate accounts** at **[SMPL-X](https://smpl-x.is.tue.mpg.de/)** and **[SMPL](https://smpl.is.tue.mpg.de/)**. Accept the terms on both sites. You will enter both logins in step ④.
+For video conversion, create **two separate accounts** at **[SMPL-X](https://smpl-x.is.tue.mpg.de/)** and **[SMPL](https://smpl.is.tue.mpg.de/)**. Accept the terms on both sites. You will enter both logins during step ③.
 
 ### ② Download
 
@@ -15,7 +15,7 @@ git clone https://github.com/ATR-Lab/robot-learning-workshop.git
 cd robot-learning-workshop
 ```
 
-### ③ Install dependencies
+### ③ Install
 
 | Windows / Ubuntu · NVIDIA GPU | Mac · Apple Silicon |
 | :--- | :--- |
@@ -25,51 +25,46 @@ cd robot-learning-workshop
 
 Allow **20 GB free on Mac / 60 GB for Docker** as planning allowances, plus space for videos and outputs. Models alone are about **6 GB**. Check Docker's storage disk too (Windows: Docker Desktop/WSL storage). Old environment backups also use space.
 
-Install **GVHMR, GMR (Docker only), MuJoCo and their dependencies**:
+**One command installs everything.** Have both accounts from step ① ready:
 ```bash
-./setup.sh --deps-only
+./setup.sh
 ```
 
-No Docker login or container shell is needed. Run commands in your normal terminal; on Windows, use Ubuntu/WSL. Docker users do not activate a venv.
-
-**Already installed?** Run `git pull`, then `./setup.sh --deps-only` again. On Mac it installs Python 3.12 if needed and repairs both environments; incompatible old environments are saved under `data/environment-backups/`. Inputs, outputs and saved logins are kept. Plain `./setup.sh` still combines installation and authentication for compatibility.
-
-Run all commands below from this repository's folder.
-
-### ④ Sign in · SMPL-X and SMPL
-
-**Before GVHMR**, have both accounts from step ① ready:
-```bash
-./workshop auth
-./workshop info
+It installs **GVHMR, GMR (Docker only), MuJoCo and their dependencies**, checks the GPU, asks for your **SMPL-X and SMPL logins** (answer **yes** for both, then enter each username/password), downloads the body models and checkpoints (about 6 GB) and a sample video, `data/inputs/tennis.mp4`. Allow 20–40 minutes the first time. It ends with a ✓ list and **`Ready`**:
 ```
-Answer **yes for SMPL-X and yes for SMPL**, then enter each account's username/password. Body models download after login; inference checkpoints download on the first video run. Allow several minutes. Missing training datasets/DPVO in `info` are normal for this static-camera workflow.
-
-**Log in again / change accounts:** rerun `./workshop auth`. Passwords are entered in the terminal and stored locally; do not put them in chat or Git. This is body-model authentication, not a Docker login. MuJoCo-only users can skip accounts: `./setup.sh --sim-only` → `./workshop demo`.
-
-### ⑤ Convert video · GVHMR
-
-Finish **both SMPL-X and SMPL logins above** before this step. For login/download failures, rerun `./workshop auth`; do not reinstall the environments.
-
-Put a short video in `data/inputs/clip.mp4`: one person, full body visible, stationary camera. Or use [GVHMR's human tennis clip](https://raw.githubusercontent.com/zju3dv/GVHMR/ee960bb6e2ea2d381aa97f08e9b71ef320b624b1/docs/example_video/tennis.mp4). The cartwheel video above is a robot result, not a GVHMR input.
-
-**Same command on Mac and Docker** — selects the environment, converts to 30 fps and checks decoded frames automatically:
-```bash
-./workshop convert data/inputs/clip.mp4
+  ✓ body model smplx
+  ✓ body model smpl
+  ✓ checkpoint gvhmr    (also hmr2, vitpose, yolo)
+Ready. Try: ./workshop process data/inputs/tennis.mp4
 ```
 
-Human motion: **`data/outputs/clip/gvhmr/hmr4d_results.pt`** on both setups. For `dance.mp4`, the folder is `data/outputs/dance/`. Logs are in its `logs/` directory. Replacing the input saves old results under `previous-*/` instead of reusing stale motion; those backups use extra disk space.
+No Docker login or container shell is needed. Run commands in your normal terminal from this folder; on Windows, use Ubuntu/WSL. Docker users do not activate a venv.
 
-### ⑥ Retarget to K1 + export CSV · GMR
+**If something is ✗ or a download failed:** rerun `./setup.sh`; it keeps what is already done. **Change accounts:** `./workshop auth`. **Check again:** `./workshop check`. Passwords are entered in the terminal and stored locally; do not put them in chat or Git. MuJoCo-only users can skip accounts: `./setup.sh --sim-only` → `./workshop demo`. `./setup.sh --deps-only` installs without logins or downloads.
 
-**Docker** — use the result from step ⑤:
+**Already installed?** Run `git pull`, then `./setup.sh` again. On Mac it installs Python 3.12 if needed and repairs both environments; incompatible old environments are saved under `data/environment-backups/`. Inputs, outputs and saved logins are kept.
+
+### ④ Convert video · GVHMR
+
+**First, the sample** (one person, full body, stationary camera):
 ```bash
-./workshop retarget data/outputs/clip/gvhmr/hmr4d_results.pt --clip clip
+./workshop convert data/inputs/tennis.mp4
 ```
 
-Result: **`data/outputs/clip/clip.csv`**. Mac users send their `.pt` to the workshop team for this step. The team trains a policy on the server.
+**Your own video:** copy it into `data/inputs/` (e.g. `data/inputs/dance.mp4`) and run `./workshop convert data/inputs/dance.mp4`. Use one person, full body visible, stationary camera. The cartwheel video above is a robot result, not a GVHMR input. The same command works on Mac and Docker; it converts to 30 fps and checks decoded frames automatically.
 
-### ⑦ Run policy · MuJoCo
+Human motion: **`data/outputs/<name>/gvhmr/hmr4d_results.pt`**, named after the video (`tennis.mp4` → `data/outputs/tennis/`). Logs are in its `logs/` directory. Replacing the input saves old results under `previous-*/` instead of reusing stale motion; those backups use extra disk space.
+
+### ⑤ Retarget to K1 + export CSV · GMR
+
+**Docker** — use the result from step ④:
+```bash
+./workshop retarget data/outputs/tennis/gvhmr/hmr4d_results.pt --clip tennis
+```
+
+Result: **`data/outputs/tennis/tennis.csv`**. Both steps at once: `./workshop process data/inputs/tennis.mp4`. Mac users send their `.pt` to the workshop team for this step. The team trains a policy on the server.
+
+### ⑥ Run policy · MuJoCo
 
 **Try the included cartwheel first** — no separate downloads:
 ```bash
@@ -88,5 +83,7 @@ Mac: **Enter** restarts; **Space** pauses. Docker: open the printed browser URL 
 Mac launchers select their own Python 3.12 environment automatically. For manual use: `source .venv/bin/activate` for GVHMR or `source .venv-sim/bin/activate` for MuJoCo. After rerunning setup, deactivate/reactivate any old terminal environment before using bare `gvhmr`.
 
 [More policy details](docs/setup-details.md#mujoco-policy-playback). Your own trained policies are provided separately.
+
+**Start over (Linux):** Docker writes some `data/` files as root, so plain `rm -rf` fails. Remove the folder with `docker run --rm -v "$PWD":/w ubuntu:24.04 rm -rf /w/data`, and the images with `docker rmi robot-learning-workshop:dev robot-learning-workshop-sim:dev`. Run `./workshop --help` for all commands.
 
 **Update:** `git pull` · **Privacy:** inputs, models and private policies stay out of Git. [Workstation test results and platform limits](docs/validation.md).

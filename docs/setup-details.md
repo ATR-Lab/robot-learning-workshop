@@ -21,11 +21,10 @@ On **Windows**, install the NVIDIA Windows driver and [Docker Desktop with WSL 2
 Check `nvidia-smi` and `docker info`, then run:
 
 ```bash
-./setup.sh --deps-only
-./workshop auth
+./setup.sh
 ```
 
-Setup builds the images and checks CUDA; `auth` separately asks for **both SMPL-X and SMPL** logins. Repeat `./workshop auth` to change accounts. No host Python/Conda is needed. Allow **60 GB free** as a first-install planning allowance, including images/cache, about 6 GB of models, and outputs. Check the Docker storage disk too. Credentials and models stay in ignored `data/`; do not share that folder wholesale. See the [step-by-step Docker/Toolkit/runtime installation](docker.md).
+Setup builds the images, checks CUDA, asks for **both SMPL-X and SMPL** logins and downloads the models and a sample video. Repeat `./workshop auth` to change accounts. No host Python/Conda is needed. Allow **60 GB free** as a first-install planning allowance, including images/cache, about 6 GB of models, and outputs. Check the Docker storage disk too. Credentials and models stay in ignored `data/`; do not share that folder wholesale. See the [step-by-step Docker/Toolkit/runtime installation](docker.md).
 
 ## Option 2 · macOS (Apple Silicon)
 
@@ -54,7 +53,9 @@ Other commands:
 
 ```bash
 ./workshop doctor           # GPU and dependency checks
-./workshop info             # model/download status
+./workshop check            # ✓/✗ models needed for conversion
+./workshop download         # missing checkpoints + sample video
+./workshop info             # full GVHMR status
 ./workshop shell            # container shell
 ```
 

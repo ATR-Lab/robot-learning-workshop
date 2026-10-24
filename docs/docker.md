@@ -65,26 +65,15 @@ The container must list your GPU. `permission denied` on `docker.sock`: reconnec
 
 With Docker Desktop's WSL backend, skip Ubuntu's Engine/Toolkit commands above: Desktop manages the engine and GPU integration. Do not install a Linux NVIDIA display driver inside WSL. Allocate enough storage to Docker Desktop/WSL as well as to the project. Clone into `~/robot-learning-workshop` inside Ubuntu.
 
-## Install workshop dependencies
+## Install everything
 
-From the cloned repository:
-
-```bash
-./setup.sh --deps-only
-```
-
-This builds the separate **GVHMR, GMR and MuJoCo** environments/images and checks GPU dependencies. No local Python/Conda or venv activation is needed. To update an existing installation: `git pull`, then rerun this command. Data persists between containers.
-
-## Before GVHMR · both body-model accounts
-
-Register separately and accept the terms at **both [SMPL-X](https://smpl-x.is.tue.mpg.de/) and [SMPL](https://smpl.is.tue.mpg.de/)**. These are separate accounts/licenses; do not assume one login covers both.
+Register first and accept the terms at **both [SMPL-X](https://smpl-x.is.tue.mpg.de/) and [SMPL](https://smpl.is.tue.mpg.de/)**. These are separate accounts/licenses; do not assume one login covers both. Then, from the cloned repository:
 
 ```bash
-./workshop auth
-./workshop info
+./setup.sh
 ```
 
-Answer **yes for both accounts**, then enter each username/password in the terminal. This downloads the body models; the first video run also downloads inference checkpoints. Allow several minutes. `info` shows which assets are ready; training datasets and DPVO are not required for the workshop's static-camera conversion.
+This builds the separate **GVHMR, GMR and MuJoCo** images, checks the GPU, asks for both logins (answer **yes for both**), downloads the body models, the inference checkpoints (about 6 GB) and the sample `data/inputs/tennis.mp4`, and ends with a ✓ list and `Ready`. No local Python/Conda or venv activation is needed. Rerunning it keeps what is already done; to update: `git pull`, then `./setup.sh`. `./workshop check` repeats the ✓ list. `./workshop info` shows GVHMR's full table, where DPVO and the data packs stay ✗ (not needed); ignore its `gvhmr download` hint, use `./workshop download`.
 
 **Change accounts / log in again:** rerun `./workshop auth` and configure both accounts. Credentials persist in ignored `data/home/`; inference weights in `data/checkpoints/`, body models in `data/body_models/`, and download caches in `data/cache/`. Do not share those folders wholesale. No container login or `docker login` is involved.
 
