@@ -27,6 +27,7 @@ class SetupTest(unittest.TestCase):
                                 f'if [[ "$1" == -m ]]; then echo x86_64; else echo {system}; fi')
                 for command in ('ffmpeg', 'ffprobe', 'docker', 'nvidia-smi', 'git'):
                     self.executable(root / 'bin' / command, 'exit 0')
+                self.executable(root / 'bin/sysctl', 'echo 1')  # Apple Silicon
                 self.executable(root / 'sim', 'exit 0')
                 self.executable(root / 'workshop', 'echo "$*" >> "$TEST_CALLS"')
                 for folder in ('.venv', '.venv-sim', '.venv-gmr'):

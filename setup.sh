@@ -6,6 +6,12 @@ source "$ROOT/scripts/python-env.sh"
 [[ $# -eq 0 || ( $# -eq 1 && ( "$1" == --sim-only || "$1" == --deps-only ) ) ]] || { echo 'Usage: ./setup.sh [--deps-only | --sim-only]' >&2; exit 1; }
 mkdir -p data/inputs data/outputs data/policies
 if [[ "$(uname -s)" == Darwin ]]; then
+    # GVHMR needs PyTorch 2.4+, which is published for Apple Silicon only (Intel Macs stop at 2.2).
+    if [[ "${1:-}" != --sim-only && "$(sysctl -n hw.optional.arm64 2>/dev/null)" != 1 ]]; then
+        echo 'This is an Intel Mac. Video conversion needs PyTorch 2.4+, which has no Intel Mac builds.' >&2
+        echo 'Here: ./setup.sh --sim-only (then ./workshop demo, ./workshop motion). Convert videos on Linux + NVIDIA (Docker) or an Apple Silicon Mac.' >&2
+        exit 1
+    fi
     ./sim setup
     [[ "${1:-}" != --sim-only ]] || exit 0
     if ! command -v ffmpeg >/dev/null || ! command -v ffprobe >/dev/null; then
@@ -17,6 +23,11 @@ if [[ "$(uname -s)" == Darwin ]]; then
     fi
     WORKSHOP_PYTHON="$ROOT/.venv-sim/bin/python"
     ensure_python312_env "$ROOT/.venv"
+    if ! .venv/bin/python -c 'import platform, sys; sys.exit(platform.machine() != "arm64")'; then
+        echo 'Python here is an Intel (x86_64) build running under Rosetta; PyTorch 2.4+ needs the Apple Silicon build.' >&2
+        echo 'Install Homebrew in /opt/homebrew (https://brew.sh), then: rm -rf .venv .venv-sim .venv-gmr && ./setup.sh' >&2
+        exit 1
+    fi
     .venv/bin/python -m pip install 'setuptools<81' wheel 'numpy==1.26.4'
     .venv/bin/python -m pip install --no-build-isolation chumpy==0.70
     .venv/bin/python -m pip install 'gvhmr[preproc]==1.6.1'

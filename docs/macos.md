@@ -1,6 +1,6 @@
 # Mac requirements
 
-Use **Apple Silicon** and **macOS 14+**. Install [Homebrew](https://brew.sh) if Python 3.12 is not installed; setup installs Python 3.12 through Homebrew automatically. No Docker or NVIDIA driver is needed.
+Use **Apple Silicon** and **macOS 14+**. Intel Macs can run only the MuJoCo player (`./setup.sh --sim-only`, then `./workshop demo` or `./workshop motion`): PyTorch 2.4+, which video conversion needs, has no Intel Mac builds. Install [Homebrew](https://brew.sh) if Python 3.12 is not installed; setup installs Python 3.12 through Homebrew automatically. No Docker or NVIDIA driver is needed.
 
 [Return to the README](../README.md) and run `./setup.sh`. It installs GVHMR, MuJoCo, FFmpeg and the K1 model, asks for both logins and downloads the models and a sample video. Allow **20 GB free** as a planning allowance, plus video/output space; inference checkpoints and body models alone are about 6 GB.
 
