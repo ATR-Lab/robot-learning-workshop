@@ -191,7 +191,8 @@ def retarget(prediction, clip, record=True):
     shutil.copy2(csv, folder / f'{clip}.csv')
     made = [f'{clip}.csv']
     if record:
-        render = [PYTHONS['gmr'], ROOT / 'scripts/render_motion.py', motion, folder / f'{clip}_k1.mp4']
+        render = [PYTHONS['gmr'], ROOT / 'scripts/render_motion.py', motion, folder / f'{clip}_k1.mp4',
+                  '--camera-from', prediction]
         made.append(f'{clip}_k1.mp4')
         if (folder / 'input.mp4').is_file():
             render += ['--beside', folder / 'input.mp4', '--compare-output', folder / f'{clip}_compare.mp4']

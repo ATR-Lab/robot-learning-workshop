@@ -124,6 +124,7 @@ class PipelineTest(unittest.TestCase):
             self.assertEqual(len(calls), 5)
             self.assertTrue((data / 'outputs/clip_123_test/clip_123_test_k1.mp4').is_file())
             self.assertIn('--beside', calls[-1])
+            self.assertIn('--camera-from', calls[-1])
             self.assertTrue(calls[1][-1].endswith('clip_123_test_pose.mp4'))
             self.assertFalse(any('train.py' in arg or 'csv_to_npz.py' in arg for call in calls for arg in call))
 
