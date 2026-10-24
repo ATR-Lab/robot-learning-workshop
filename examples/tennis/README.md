@@ -3,7 +3,8 @@
 Reference result of the sample run. After `./setup.sh` (it downloads the input to `data/inputs/tennis.mp4`):
 
 ```bash
-./workshop process data/inputs/tennis.mp4
+./workshop body data/inputs/tennis.mp4
+./workshop robot tennis
 ```
 
 Your `data/outputs/tennis/` should match these files:

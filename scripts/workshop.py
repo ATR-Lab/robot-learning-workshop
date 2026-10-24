@@ -143,7 +143,7 @@ def convert(video, clip, record=True):
     run(recover, log=folder / 'logs/gvhmr.log')
     print(f'Body pose: data/outputs/{clip}/gvhmr/hmr4d_results.pt'
           + (f' + {clip}_pose.mp4' if record else '')
-          + f'. Next: ./workshop retarget {clip}')
+          + f'. Next: ./workshop robot {clip}')
     return prediction, clip
 
 
@@ -168,7 +168,7 @@ def pose_result(value, clip):
         clip = clip or clip_name(value)
         path = DATA / 'outputs' / value / 'gvhmr/hmr4d_results.pt'
         if not path.is_file():
-            raise FileNotFoundError(f'No body pose for {value!r}. Run first: ./workshop convert data/inputs/{value}.mp4')
+            raise FileNotFoundError(f'No body pose for {value!r}. Run first: ./workshop body data/inputs/{value}.mp4')
     elif clip is None:
         if path.parent.name != 'gvhmr':
             raise ValueError('Add --clip NAME to choose the output folder for this .pt file.')
@@ -223,15 +223,19 @@ def main(argv=None):
         ('shell', 'Open a shell inside the workshop container.'),
     ):
         subs.add_parser(name, help=help_text)
-    for name, help_text in (
-        ('convert', 'Step 1 · GVHMR: video → body pose (+ <clip>_pose.mp4).'),
-        ('process', 'Steps 1 + 2: video → body pose → K1 motion.'),
+    # body/robot are the workshop names; convert/retarget stay as aliases for older instructions.
+    for name, aliases, help_text in (
+        ('body', ['convert'], 'Step 1 · GVHMR: video → body pose (+ <clip>_pose.mp4).'),
+        ('process', [], 'Steps 1 + 2 at once: video → body pose → K1 motion.'),
     ):
-        p = subs.add_parser(name, help=help_text)
+        p = subs.add_parser(name, aliases=aliases, help=help_text)
+        p.set_defaults(step=name)
         p.add_argument('video')
         p.add_argument('--clip', type=clip_name)
         p.add_argument('--no-video', dest='record', action='store_false', help='skip the result videos')
-    p = subs.add_parser('retarget', help='Step 2 · GMR: body pose → K1 CSV (+ <clip>_k1.mp4, <clip>_compare.mp4).')
+    p = subs.add_parser('robot', aliases=['retarget'],
+                        help='Step 2 · GMR: body pose → K1 CSV (+ <clip>_k1.mp4, <clip>_compare.mp4).')
+    p.set_defaults(step='robot')
     p.add_argument('prediction', help='clip name from step 1 (e.g. tennis) or a trusted 30 fps hmr4d_results.pt')
     p.add_argument('--clip', type=clip_name)
     p.add_argument('--no-video', dest='record', action='store_false', help='skip the result videos')
@@ -257,11 +261,11 @@ def main(argv=None):
         info()
     elif args.command == 'shell':
         os.execvp('/bin/bash', ['/bin/bash'])
-    elif args.command == 'convert':
+    elif getattr(args, 'step', None) == 'body':
         convert(args.video, args.clip, args.record)
-    elif args.command == 'process':
+    elif getattr(args, 'step', None) == 'process':
         process(args.video, args.clip, args.record)
-    elif args.command == 'retarget':
+    elif getattr(args, 'step', None) == 'robot':
         retarget(args.prediction, args.clip, args.record)
 
 if __name__ == '__main__':

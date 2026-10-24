@@ -144,11 +144,11 @@ class PipelineTest(unittest.TestCase):
                     (Path(cmd[-1]) / 'csv/tennis_booster_k1.csv').write_text('data')
 
             with patch.multiple(w, ROOT=root, DATA=data), patch.object(w, 'run', side_effect=fake_run) as run:
-                w.main(['retarget', 'tennis', '--no-video'])
+                w.main(['robot', 'tennis', '--no-video'])
             self.assertEqual((data / 'outputs/tennis/tennis.csv').read_text(), 'data')
             self.assertEqual(run.call_count, 2)
-            with patch.multiple(w, ROOT=root, DATA=data), self.assertRaisesRegex(FileNotFoundError, 'convert'):
-                w.main(['retarget', 'dance'])
+            with patch.multiple(w, ROOT=root, DATA=data), self.assertRaisesRegex(FileNotFoundError, 'workshop body'):
+                w.main(['retarget', 'dance'])  # old name still works
 
     def test_convert_no_video_skips_pose_render(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -157,7 +157,7 @@ class PipelineTest(unittest.TestCase):
             video.parent.mkdir(parents=True)
             video.touch()
             with patch.multiple(w, ROOT=root, DATA=root / 'data'), patch.object(w, 'run') as run:
-                w.main(['convert', str(video), '--no-video'])
+                w.main(['body', str(video), '--no-video'])
             self.assertEqual(len(run.call_args_list[1].args[0]), 4)
 
     def test_rejects_inputs_outside_data(self):

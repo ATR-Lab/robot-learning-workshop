@@ -35,18 +35,18 @@ Runs both steps natively: GVHMR on the Apple GPU, GMR in its own environment. Fo
 Put a short video in `data/inputs/clip.mp4`: one person, full body visible, stationary camera.
 
 ```bash
-./workshop convert data/inputs/clip.mp4
-./workshop retarget data/outputs/clip/gvhmr/hmr4d_results.pt --clip clip
+./workshop body data/inputs/clip.mp4
+./workshop robot clip
 ```
 
 Results are in `data/outputs/clip/`: human-motion `gvhmr/hmr4d_results.pt`, robot-motion `robot_data/booster_k1/clip_booster_k1.pkl`, `clip.csv`, staged video and logs. Send **only this clip's output folder** to the workshop server using the organizer's transfer instructions. The server handles training-format conversion and policy training.
 
-To run conversion and retargeting together, use `./workshop process data/inputs/clip.mp4`.
+To run both steps together, use `./workshop process data/inputs/clip.mp4`.
 
 Already recovered motion on your Mac? Copy the trusted 30 fps result into `data/` and run:
 
 ```bash
-./workshop retarget data/my-result/hmr4d_results.pt --clip clip
+./workshop robot data/my-result/hmr4d_results.pt --clip clip
 ```
 
 Other commands:
@@ -109,9 +109,9 @@ The full **Ubuntu + NVIDIA Docker pipeline is validated** on the tennis sample: 
 
 | Command | What it does |
 | :--- | :--- |
-| `./workshop convert data/inputs/x.mp4` | Video → body pose: `data/outputs/x/gvhmr/hmr4d_results.pt` + `x_pose.mp4` (Mac and Docker) |
-| `./workshop retarget x` | Body pose → K1 CSV + videos. A `.pt` path also works; add `--clip NAME` if it is not in `data/outputs/<name>/gvhmr/` |
-| `./workshop process data/inputs/x.mp4` | Both of the above. Add `--no-video` to any of the three to skip videos |
+| `./workshop body data/inputs/x.mp4` | Step 1 · video → body pose: `data/outputs/x/gvhmr/hmr4d_results.pt` + `x_pose.mp4` (Mac and Docker) |
+| `./workshop robot x` | Step 2 · body pose → K1 CSV + videos. A `.pt` path also works; add `--clip NAME` if it is not in `data/outputs/<name>/gvhmr/` |
+| `./workshop process data/inputs/x.mp4` | Both of the above. Add `--no-video` to any of the three to skip videos. `convert`/`retarget` are old names for `body`/`robot` and still work |
 | `./workshop download` | Missing checkpoints + sample video, then the ✓ check |
 | `./workshop info` | Full GVHMR status. DPVO and data packs (3dpw, amass, …) stay ✗: not needed. Ignore its `gvhmr download` hint; use `./workshop download` |
 | `./setup.sh --deps-only` | Install without logins or downloads |

@@ -10,4 +10,4 @@ Already installed with another Python? Rerun `./setup.sh`. It saves incompatible
 
 The README shows the three workflow steps and optional activation commands. For MuJoCo only, use `./setup.sh --sim-only`; no SMPL accounts are needed.
 
-All README commands work natively: `./workshop convert` (step 1, GVHMR on the Apple GPU), `./workshop retarget` (step 2, GMR), `./workshop process` (both), `./workshop demo` and `./workshop play <policy.onnx>`. Setup keeps GMR in `.venv-gmr/` and its pinned pipeline in `.pipeline/`, separate from GVHMR's `.venv/`.
+All README commands work natively: `./workshop body` (step 1, GVHMR on the Apple GPU), `./workshop robot` (step 2, GMR), `./workshop process` (both), `./workshop demo` and `./workshop play <policy.onnx>`. Setup keeps GMR in `.venv-gmr/` and its pinned pipeline in `.pipeline/`, separate from GVHMR's `.venv/`.

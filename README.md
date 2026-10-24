@@ -10,23 +10,31 @@ You need **[Docker + NVIDIA GPU](docs/docker.md)** (Linux; Windows WSL 2 is [unt
 ```bash
 git clone https://github.com/ATR-Lab/robot-learning-workshop.git
 cd robot-learning-workshop
-./setup.sh                                     # installs everything, asks for both logins
-./workshop process data/inputs/tennis.mp4      # sample video → K1 motion
-./workshop demo                                # watch the K1 cartwheel in simulation
+./setup.sh                                 # install everything, asks for both logins
+./workshop body data/inputs/tennis.mp4     # 1. video → body pose
+./workshop robot tennis                    # 2. body pose → K1 robot
+./workshop demo                            # watch the K1 cartwheel in simulation
 ```
 
-Setup takes 20–40 minutes the first time and ends with **`Ready`**. `process` saves in **`data/outputs/tennis/`**: `tennis.csv` (K1 motion) plus videos: `tennis_pose.mp4` (body pose), `tennis_k1.mp4` (K1) and `tennis_compare.mp4` (video beside the K1). Compare with the [expected result](examples/tennis).
+Setup takes 20–40 minutes the first time and ends with **`Ready`**. Results go to **`data/outputs/tennis/`**:
 
-## Your own video · two steps
+| Step | You get |
+| :--- | :--- |
+| 1 · `body` | `tennis_pose.mp4`: the body pose over the video and in 3D |
+| 2 · `robot` | `tennis.csv` (K1 motion, 30 Hz), `tennis_k1.mp4` (K1), `tennis_compare.mp4` (video beside the K1) |
 
-Copy it to `data/inputs/` (one person, full body visible, camera not moving), then:
+Compare with the [expected result](examples/tennis).
+
+## Your own video
+
+Copy it to `data/inputs/` (one person, full body visible, camera not moving), then the same two steps:
 
 ```bash
-./workshop convert data/inputs/dance.mp4       # 1. video → body pose     → dance_pose.mp4
-./workshop retarget dance                      # 2. body pose → K1 robot   → dance.csv, dance_k1.mp4, dance_compare.mp4
+./workshop body data/inputs/dance.mp4      # 1. → data/outputs/dance/dance_pose.mp4
+./workshop robot dance                     # 2. → dance.csv, dance_k1.mp4, dance_compare.mp4
 ```
 
-Results are in `data/outputs/dance/`. `./workshop process data/inputs/dance.mp4` runs both steps. Videos are on by default; add **`--no-video`** to any of these commands to skip them.
+Videos are on by default; add **`--no-video`** to skip them. Both steps at once: `./workshop process data/inputs/dance.mp4`.
 
 Send the `data/outputs/dance/` folder to the workshop team; they train the policy. Both steps run on Docker and natively on a Mac.
 

@@ -43,7 +43,7 @@ if [[ "$(uname -s)" == Darwin ]]; then
         .venv/bin/gvhmr auth smpl
     fi
     ./workshop download
-    echo 'Ready. Try: ./workshop process data/inputs/tennis.mp4'
+    echo 'Ready. Next: ./workshop body data/inputs/tennis.mp4, then ./workshop robot tennis'
     exit 0
 fi
 if [[ "${1:-}" == --sim-only ]]; then
@@ -73,4 +73,4 @@ if [[ -f data/home/.config/gvhmr/smpl_credentials.toml ]]; then
 else
     ./workshop auth
 fi
-echo 'Ready. Try: ./workshop process data/inputs/tennis.mp4'
+echo 'Ready. Next: ./workshop body data/inputs/tennis.mp4, then ./workshop robot tennis'
