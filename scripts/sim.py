@@ -197,11 +197,23 @@ def main(argv=None):
                                epilog='Player flags: --web, --check, --json FILE, --record FILE, --no-ghost.')
     play.add_argument('source')
     play.add_argument('player_args', nargs=argparse.REMAINDER)
+    motion = commands.add_parser('motion', help='Play a K1 reference motion CSV (no policy).',
+                                 epilog='Player flags: --web, --record FILE, --fps N.')
+    motion.add_argument('source')
+    motion.add_argument('player_args', nargs=argparse.REMAINDER)
     args = parser.parse_args(argv)
     if args.command == 'import':
         import_bundle(args.source, args.name)
     elif args.command == 'pack':
         pack_bundle(args.source, args.output)
+    elif args.command == 'motion':
+        flags = args.player_args
+        if os.environ.get('SIM_DOCKER') and '--record' not in flags:
+            flags = [*flags, '--web']
+        python = sys.executable
+        if sys.platform == 'darwin' and not any(f in flags for f in ('--record', '--web', '--help')):
+            python = str(Path(sys.executable).parent / 'mjpython')
+        subprocess.run([python, str(ROOT / 'scripts/play_motion.py'), args.source, *flags], check=True)
     else:
         folder = resolve_source(args.source)
         config = validate_bundle(folder)

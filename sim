@@ -11,7 +11,7 @@ if [[ "${1:-}" == --docker ]]; then
         exec docker compose build sim
     fi
     ports=()
-    if [[ "${1:-}" == play && " $* " != *' --check '* && " $* " != *' --record '* ]]; then
+    if [[ ( "${1:-}" == play || "${1:-}" == motion ) && " $* " != *' --check '* && " $* " != *' --record '* ]]; then
         if [[ -z "${SIM_PORT:-}" ]]; then
             SIM_PORT=8080
             if command -v ss >/dev/null; then

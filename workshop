@@ -2,13 +2,13 @@
 set -Eeuo pipefail
 cd "$(dirname "$0")"
 case "${1:-}" in
-    play|demo)
+    play|demo|motion)
         action="$1"; shift
-        [[ "$action" != demo ]] || set -- examples/cartwheel "$@"
+        [[ "$action" != demo ]] || { action=play; set -- examples/cartwheel "$@"; }
         if [[ "$(uname -s)" == Darwin ]]; then
-            exec ./sim play "$@"
+            exec ./sim "$action" "$@"
         else
-            exec ./sim --docker play "$@"
+            exec ./sim --docker "$action" "$@"
         fi
         ;;
 esac

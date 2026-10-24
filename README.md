@@ -46,6 +46,15 @@ Send the `data/outputs/dance/` folder to the workshop team; they train the polic
 
 Mac opens a viewer (**Enter** restart, **Space** pause). Docker prints a browser link, normally **http://localhost:8080** → **Play**.
 
+## Watch a motion (no policy)
+
+```bash
+./workshop motion examples/dances/gangnam_style     # 8 K1 dances in examples/dances
+./workshop motion data/outputs/tennis/tennis.csv    # or your own result from step 2
+```
+
+Add `--record data/x.mp4` to save a video.
+
 ## If something goes wrong
 
 | Problem | Fix |
@@ -61,4 +70,4 @@ Disk space: about **60 GB** with Docker, **20 GB** on Mac. Passwords stay on you
 
 **Play with the real tools** (GVHMR, GMR, MuJoCo options, other robots): [advanced guide](docs/advanced.md).
 
-**More:** [setup details and troubleshooting](docs/setup-details.md) · [Docker install](docs/docker.md) · [Mac](docs/macos.md) · [tennis example result](examples/tennis) · [cartwheel example](examples/cartwheel) ([video](docs/examples/cartwheel_final_29999.mp4)) · [test results](docs/validation.md)
+**More:** [setup details and troubleshooting](docs/setup-details.md) · [Docker install](docs/docker.md) · [Mac](docs/macos.md) · [tennis example result](examples/tennis) · [K1 dances](examples/dances) · [cartwheel example](examples/cartwheel) ([video](docs/examples/cartwheel_final_29999.mp4)) · [test results](docs/validation.md)
