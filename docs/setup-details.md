@@ -61,7 +61,7 @@ Other commands:
 
 ## Update
 
-Run `git pull`, then `./setup.sh --deps-only` when dependencies/Dockerfiles change. Data persists between containers. GVHMR and GMR have separate stage packages and share one pinned Torch/CUDA installation to avoid duplicating several GB. Organizers can distribute a tested image using `WORKSHOP_IMAGE=registry/image:version ./setup.sh --deps-only`; no prebuilt image is published yet.
+Run `git pull`, then `./setup.sh`. It keeps inputs, outputs, saved logins and downloaded models. Data persists between containers. GVHMR and GMR have separate stage packages and share one pinned Torch/CUDA installation to avoid duplicating several GB. Organizers can distribute a tested image using `WORKSHOP_IMAGE=registry/image:version ./setup.sh --deps-only`; no prebuilt image is published yet.
 
 ## MuJoCo policy playback
 
@@ -104,6 +104,23 @@ The supplied `final_29999` export completes its 10.24 s headless Mac and Ubuntu/
 On Apple Silicon, keep using native GVHMR for Apple GPU acceleration; Docker on Mac does not provide CUDA. This Docker setup targets Linux + NVIDIA, including Ubuntu under WSL 2.
 
 The full **Ubuntu + NVIDIA Docker pipeline is validated** on the tennis sample: GVHMR → GMR → CSV. Windows/WSL2 and a complete native Mac GVHMR run remain unverified. See the [tested versions, commands and limits](validation.md).
+
+## More commands and troubleshooting
+
+| Command | What it does |
+| :--- | :--- |
+| `./workshop convert data/inputs/x.mp4` | Video → human motion only: `data/outputs/x/gvhmr/hmr4d_results.pt` (Mac and Docker) |
+| `./workshop retarget data/outputs/x/gvhmr/hmr4d_results.pt --clip x` | Human motion → K1 CSV (Docker only) |
+| `./workshop process data/inputs/x.mp4` | Both of the above |
+| `./workshop download` | Missing checkpoints + sample video, then the ✓ check |
+| `./workshop info` | Full GVHMR status. DPVO and data packs (3dpw, amass, …) stay ✗: not needed. Ignore its `gvhmr download` hint; use `./workshop download` |
+| `./setup.sh --deps-only` | Install without logins or downloads |
+| `./setup.sh --sim-only` | MuJoCo player only; no accounts or NVIDIA GPU needed, then `./workshop demo` |
+| `SIM_PORT=8081 ./workshop demo` | Choose the browser port (Linux picks the next free port if 8080 is busy). Over SSH: `ssh -L 8081:localhost:8081 user@server` |
+
+- **Outputs** are named after the video: `dance.mp4` → `data/outputs/dance/`, logs in its `logs/`. Replacing a video keeps the old results under `previous-*/`, which uses extra disk space.
+- **Mac environments:** launchers pick their own Python 3.12 automatically. For manual use: `source .venv/bin/activate` (GVHMR) or `source .venv-sim/bin/activate` (MuJoCo). Old incompatible environments are saved in `data/environment-backups/`.
+- **Start over (Linux):** Docker writes some `data/` files as root, so plain `rm -rf` fails. Use `docker run --rm -v "$PWD":/w ubuntu:24.04 rm -rf /w/data` and `docker rmi robot-learning-workshop:dev robot-learning-workshop-sim:dev`.
 
 ## Credits
 
