@@ -113,12 +113,16 @@ class PipelineTest(unittest.TestCase):
                     folder = Path(cmd[-1]) / 'csv'
                     folder.mkdir()
                     (folder / 'clip_123_test_booster_k1.csv').write_text('data')
+                elif cmd[1].endswith('render_motion.py'):
+                    Path(cmd[3]).touch()
 
             with patch.multiple(w, ROOT=root, DATA=data, PIPELINE=pipeline), patch.object(w, 'run', side_effect=fake_run):
                 w.process(video, None)
             self.assertEqual((data / 'outputs/clip_123_test/clip_123_test.csv').read_text(), 'data')
             self.assertTrue((data / 'outputs/clip_123_test/robot_data/booster_k1/clip_123_test_booster_k1.pkl').is_file())
-            self.assertEqual(len(calls), 4)
+            self.assertEqual(len(calls), 5)
+            self.assertTrue((data / 'outputs/clip_123_test/clip_123_test_k1.mp4').is_file())
+            self.assertIn('--beside', calls[-1])
             self.assertFalse(any('train.py' in arg or 'csv_to_npz.py' in arg for call in calls for arg in call))
 
     def test_rejects_inputs_outside_data(self):

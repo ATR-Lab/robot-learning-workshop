@@ -15,14 +15,14 @@ cd robot-learning-workshop
 ./workshop demo                                # watch the K1 cartwheel in simulation
 ```
 
-Setup takes 20–40 minutes the first time and ends with **`Ready`**. Result of `process`: **`data/outputs/tennis/tennis.csv`**.
+Setup takes 20–40 minutes the first time and ends with **`Ready`**. `process` saves in **`data/outputs/tennis/`**: `tennis.csv` (K1 motion), `tennis_k1.mp4` (K1 animation) and `tennis_compare.mp4` (your video beside the K1).
 
 ## Your own video
 
 Copy it to `data/inputs/` (one person, full body visible, camera not moving), then:
 
 ```bash
-./workshop process data/inputs/dance.mp4       # → data/outputs/dance/dance.csv
+./workshop process data/inputs/dance.mp4       # → data/outputs/dance/: dance.csv + dance_k1.mp4 + dance_compare.mp4
 ```
 
 Send the `data/outputs/dance/` folder to the workshop team; they train the policy.

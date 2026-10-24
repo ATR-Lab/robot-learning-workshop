@@ -168,7 +168,13 @@ def retarget(prediction, clip):
     if not csv.is_file():
         raise FileNotFoundError(f'GMR produced no CSV: {csv}')
     shutil.copy2(csv, folder / f'{clip}.csv')
-    print(f'Ready: data/outputs/{clip}/. Send this folder to the workshop server for training.')
+    render = [PYTHONS['gmr'], ROOT / 'scripts/render_motion.py', motion, folder / f'{clip}_k1.mp4']
+    if (folder / 'input.mp4').is_file():
+        render += ['--beside', folder / 'input.mp4', '--compare-output', folder / f'{clip}_compare.mp4']
+    run(render, log=folder / 'logs/render.log')
+    print(f'Ready: data/outputs/{clip}/ — {clip}.csv, {clip}_k1.mp4'
+          + (f', {clip}_compare.mp4' if len(render) > 4 else '')
+          + '. Send this folder to the workshop server for training.')
 
 
 
