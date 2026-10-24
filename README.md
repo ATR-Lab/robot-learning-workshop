@@ -51,10 +51,10 @@ Mac opens a viewer (**Enter** restart, **Space** pause). Docker prints a browser
 | Problem | Fix |
 | :--- | :--- |
 | Setup shows ✗ or a download failed | Run `./setup.sh` again; it keeps what is done |
-| Wrong SMPL login | `./workshop auth` |
+| SMPL login refused / body models missing | `./workshop auth`; the error says which account and why |
 | Is everything ready? | `./workshop check` |
 | Update to the latest version | `git pull`, then `./setup.sh` |
-| A video step fails (e.g. on Windows WSL 2) | Add `--no-video` |
+| Videos are slow or fail (e.g. Windows WSL 2) | They switch to CPU rendering automatically; `--no-video` skips them |
 | All commands | `./workshop --help` |
 
 Disk space: about **60 GB** with Docker, **20 GB** on Mac. Passwords stay on your computer; never put them in chat or Git.

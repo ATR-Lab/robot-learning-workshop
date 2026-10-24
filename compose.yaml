@@ -18,6 +18,7 @@ services:
       HF_HOME: /workspace/data/cache/huggingface
       XDG_CACHE_HOME: /workspace/data/cache
       MUJOCO_GL: egl
+      WORKSHOP_SOFTWARE_GL: ${WORKSHOP_SOFTWARE_GL:-}
   sim:
     image: robot-learning-workshop-sim:dev
     build:

@@ -6,6 +6,11 @@ for workshop_bin in /opt/homebrew/bin /usr/local/bin; do
     [[ ! -d "$workshop_bin" ]] || export PATH="$PATH:$workshop_bin"
 done
 unset workshop_bin
+# Models live in data/ like on Docker, not inside .venv (which setup may replace).
+if [[ -n "${ROOT:-}" ]]; then
+    export GVHMR_CHECKPOINTS="${GVHMR_CHECKPOINTS:-$ROOT/data/checkpoints}"
+    export GVHMR_BODY_MODELS="${GVHMR_BODY_MODELS:-$ROOT/data/body_models}"
+fi
 
 is_python312() {
     [[ -x "$1" ]] && "$1" -c 'import sys; sys.exit(sys.version_info[:2] != (3, 12))' >/dev/null 2>&1

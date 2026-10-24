@@ -3,6 +3,7 @@ import importlib.util
 from pathlib import Path
 import tempfile
 import unittest
+import unittest.mock
 from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location('workshop', Path(__file__).parents[1] / 'scripts/workshop.py')
@@ -11,6 +12,12 @@ spec.loader.exec_module(w)
 
 
 class PipelineTest(unittest.TestCase):
+    def setUp(self):
+        # No GPU/OpenGL on the test host: the rendering probe is tested separately below.
+        patcher = patch.object(w, 'video_rendering')
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def test_changed_input_preserves_old_results_instead_of_reusing_them(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -202,6 +209,16 @@ class PipelineTest(unittest.TestCase):
             self.assertEqual(calls[0][0], str(root / '.venv-gmr/bin/python'))
             self.assertEqual(calls[0][1], str(root / '.pipeline/scripts/retarget_gvhmr.py'))
             self.assertEqual(calls[0][calls[0].index('--body-models') + 1], str(body))
+
+    def test_videos_fall_back_to_cpu_opengl_only_when_gpu_rendering_fails(self):
+        self.addCleanup(patch.stopall)
+        patch.stopall()  # use the real video_rendering
+        for probe_code, forced, expect_mesa in ((0, '', False), (1, '', True), (0, '1', True)):
+            env = {'WORKSHOP_SOFTWARE_GL': forced}
+            with self.subTest(probe=probe_code, forced=forced), patch.dict(w.os.environ, env, clear=True), \
+                    patch.object(w.subprocess, 'run', return_value=unittest.mock.Mock(returncode=probe_code)):
+                w.video_rendering()
+                self.assertEqual(w.os.environ.get('__EGL_VENDOR_LIBRARY_FILENAMES') == w.MESA_EGL, expect_mesa)
 
 
 if __name__ == '__main__':

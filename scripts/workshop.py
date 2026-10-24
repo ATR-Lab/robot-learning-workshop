@@ -105,6 +105,23 @@ def download():
     check()
 
 
+MESA_EGL = '/usr/share/glvnd/egl_vendor.d/50_mesa.json'
+GL_PROBE = ('import mujoco; r = mujoco.Renderer(mujoco.MjModel.from_xml_string("<mujoco/>"), 8, 8); '
+            'r.render(); r.close()')
+
+
+def video_rendering():
+    """Docker renders videos with GPU OpenGL (EGL); where that is missing (e.g. WSL 2), use Mesa on the CPU."""
+    if NATIVE or os.environ.get('__EGL_VENDOR_LIBRARY_FILENAMES') == MESA_EGL:
+        return
+    forced = os.environ.get('WORKSHOP_SOFTWARE_GL') == '1'
+    if not forced and subprocess.run([str(PYTHONS['gmr']), '-c', GL_PROBE], capture_output=True).returncode == 0:
+        return
+    os.environ['__EGL_VENDOR_LIBRARY_FILENAMES'] = MESA_EGL
+    print('GPU OpenGL is not available here: rendering videos on the CPU (slower). '
+          'Add --no-video to skip them.', flush=True)
+
+
 def convert(video, clip, record=True):
     video = data_file(video, allow_external=NATIVE)
     if not shutil.which('ffmpeg') or not shutil.which('ffprobe'):
@@ -139,6 +156,7 @@ def convert(video, clip, record=True):
     prediction.parent.mkdir(parents=True, exist_ok=True)
     recover = [PYTHONS['gvhmr'], ROOT / 'scripts/recover.py', staged, prediction]
     if record:
+        video_rendering()
         recover.append(folder / f'{clip}_pose.mp4')
     run(recover, log=folder / 'logs/gvhmr.log')
     print(f'Body pose: data/outputs/{clip}/gvhmr/hmr4d_results.pt'
@@ -199,6 +217,7 @@ def retarget(prediction, clip, record=True):
     shutil.copy2(csv, folder / f'{clip}.csv')
     made = [f'{clip}.csv']
     if record:
+        video_rendering()
         render = [PYTHONS['gmr'], ROOT / 'scripts/render_motion.py', motion, folder / f'{clip}_k1.mp4',
                   '--camera-from', prediction]
         made.append(f'{clip}_k1.mp4')

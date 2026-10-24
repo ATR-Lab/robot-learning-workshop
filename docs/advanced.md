@@ -17,7 +17,7 @@ source /opt/gvhmr/bin/activate        # GVHMR stage    · or: source /opt/gmr/bi
 
 Only `/workspace` is kept: this repository and its `data/` folder. The container is deleted when you exit, so **save everything under `data/`**; changes elsewhere (for example in `/opt`) are lost. Models, logins and caches are already wired up through environment variables.
 
-Mac: no shell needed. `source .venv/bin/activate` for GVHMR or `source .venv-gmr/bin/activate` for GMR, from the repository folder. Wherever this page says `/opt/pipeline`, use `.pipeline` on a Mac; body models are where `./workshop info` shows them.
+Mac: no shell needed. `source .venv/bin/activate` for GVHMR or `source .venv-gmr/bin/activate` for GMR, from the repository folder. Wherever this page says `/opt/pipeline`, use `.pipeline` on a Mac; models are in `data/` as on Docker.
 
 ## GVHMR · video → body pose
 
