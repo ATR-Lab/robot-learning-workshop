@@ -176,6 +176,33 @@ class PipelineTest(unittest.TestCase):
                     w.process(video, 'test')
                 self.assertEqual(run.call_count, 1)
 
+    def test_native_retarget_uses_local_gmr_and_gvhmr_body_models(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            data = root / 'data'
+            body = root / 'models'
+            for path in (data / 'outputs/clip/gvhmr/hmr4d_results.pt', body / 'smplx/SMPLX_NEUTRAL.npz',
+                         root / '.venv-gmr/bin/python'):
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.touch()
+            calls = []
+
+            def fake_run(command, **kwargs):
+                cmd = list(map(str, command))
+                calls.append(cmd)
+                if cmd[1].endswith('batch_gmr_pkl_to_csv.py'):
+                    (Path(cmd[-1]) / 'csv').mkdir()
+                    (Path(cmd[-1]) / 'csv/clip_booster_k1.csv').write_text('data')
+
+            with patch.multiple(w, NATIVE=True, ROOT=root, DATA=data, PIPELINE=root / '.pipeline',
+                                PYTHONS={'gvhmr': root / '.venv/bin/python', 'gmr': root / '.venv-gmr/bin/python'}), \
+                    patch.object(w, 'body_model_root', return_value=body), \
+                    patch.object(w, 'run', side_effect=fake_run):
+                w.retarget('clip', None, record=False)
+            self.assertEqual(calls[0][0], str(root / '.venv-gmr/bin/python'))
+            self.assertEqual(calls[0][1], str(root / '.pipeline/scripts/retarget_gvhmr.py'))
+            self.assertEqual(calls[0][calls[0].index('--body-models') + 1], str(body))
+
 
 if __name__ == '__main__':
     unittest.main()

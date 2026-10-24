@@ -28,7 +28,7 @@ Setup builds the images, checks CUDA, asks for **both SMPL-X and SMPL** logins a
 
 ## Option 2 · macOS (Apple Silicon)
 
-Run GVHMR natively using the Apple GPU. Follow [the Mac instructions](macos.md). Docker is not required for this option. Retargeting and training can run on workshop servers.
+Runs both steps natively: GVHMR on the Apple GPU, GMR in its own environment. Follow [the Mac instructions](macos.md). Docker is not required for this option. Training runs on the workshop servers.
 
 ## Use Docker
 
@@ -103,14 +103,14 @@ The supplied `final_29999` export completes its 10.24 s headless Mac and Ubuntu/
 
 On Apple Silicon, keep using native GVHMR for Apple GPU acceleration; Docker on Mac does not provide CUDA. This Docker setup targets Linux + NVIDIA, including Ubuntu under WSL 2.
 
-The full **Ubuntu + NVIDIA Docker pipeline is validated** on the tennis sample: GVHMR → GMR → CSV. Windows/WSL2 and a complete native Mac GVHMR run remain unverified. See the [tested versions, commands and limits](validation.md).
+The full **Ubuntu + NVIDIA Docker pipeline is validated** on the tennis sample: GVHMR → GMR → CSV. The native Mac pipeline (both steps with videos) was run on a shadowboxing clip; Windows/WSL2 remains unverified. See the [tested versions, commands and limits](validation.md).
 
 ## More commands and troubleshooting
 
 | Command | What it does |
 | :--- | :--- |
 | `./workshop convert data/inputs/x.mp4` | Video → body pose: `data/outputs/x/gvhmr/hmr4d_results.pt` + `x_pose.mp4` (Mac and Docker) |
-| `./workshop retarget x` | Body pose → K1 CSV + videos (Docker only). A `.pt` path also works; add `--clip NAME` if it is not in `data/outputs/<name>/gvhmr/` |
+| `./workshop retarget x` | Body pose → K1 CSV + videos. A `.pt` path also works; add `--clip NAME` if it is not in `data/outputs/<name>/gvhmr/` |
 | `./workshop process data/inputs/x.mp4` | Both of the above. Add `--no-video` to any of the three to skip videos |
 | `./workshop download` | Missing checkpoints + sample video, then the ✓ check |
 | `./workshop info` | Full GVHMR status. DPVO and data packs (3dpw, amass, …) stay ✗: not needed. Ignore its `gvhmr download` hint; use `./workshop download` |

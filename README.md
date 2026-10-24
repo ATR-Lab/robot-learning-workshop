@@ -11,7 +11,7 @@ You need **[Docker + NVIDIA GPU](docs/docker.md)** (Linux; Windows WSL 2 is [unt
 git clone https://github.com/ATR-Lab/robot-learning-workshop.git
 cd robot-learning-workshop
 ./setup.sh                                     # installs everything, asks for both logins
-./workshop process data/inputs/tennis.mp4      # sample video → K1 motion (Mac: convert)
+./workshop process data/inputs/tennis.mp4      # sample video → K1 motion
 ./workshop demo                                # watch the K1 cartwheel in simulation
 ```
 
@@ -28,7 +28,7 @@ Copy it to `data/inputs/` (one person, full body visible, camera not moving), th
 
 Results are in `data/outputs/dance/`. `./workshop process data/inputs/dance.mp4` runs both steps. Videos are on by default; add **`--no-video`** to any of these commands to skip them.
 
-Send the `data/outputs/dance/` folder to the workshop team; they train the policy. On a **Mac**, run step 1 and send the folder: step 2 runs on the server.
+Send the `data/outputs/dance/` folder to the workshop team; they train the policy. Both steps run on Docker and natively on a Mac.
 
 ## Run a policy
 

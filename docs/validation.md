@@ -38,7 +38,7 @@ Human motion: `data/outputs/tennis/gvhmr/hmr4d_results.pt`; CSV: `data/outputs/t
 
 - GPU inference and retargeting were also checked directly on the workstation as diagnostics, independently of the Docker run. The published Linux workflow remains Docker.
 - Existing licensed body-model files and checkpoint files were reused for these runs. The auth command routing is tested, but fresh MPI account registration/password validation was not repeated. Users must register and accept terms on both sites themselves.
-- Mac environments/launchers, dependency checks and cartwheel playback were tested. A complete Apple-GPU GVHMR run remains unverified: the local Mac ran out of free-space headroom during verification, so that run was stopped.
+- Mac environments/launchers, dependency checks and cartwheel playback were tested. 2026-10-24, Apple Silicon: `./setup.sh` installed GVHMR, GMR and MuJoCo natively; an 8-second 1280×720 shadowboxing clip ran through `convert` (about 3 minutes on the Apple GPU, with `_pose.mp4`) and `retarget` (seconds, with `_k1.mp4` and `_compare.mp4`).
 - Windows/WSL2 instructions follow the linked official documentation; Windows execution has not been tested. Expected risk: the video steps use EGL rendering inside the container, which WSL 2 supports poorly; the CUDA motion steps should run. Workaround: `--no-video`.
 - Missing-frame metadata has a decoded-frame-count fallback, tested with a fragmented MP4 and the zero-count case. The original `dance.mp4` from the reported failure was not available for testing.
 - A successful pipeline check verifies execution and output structure; motion quality depends on the input video and policy.

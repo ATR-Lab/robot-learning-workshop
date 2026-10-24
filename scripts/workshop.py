@@ -19,6 +19,8 @@ PIPELINE = Path('/opt/pipeline')
 PYTHONS = {name: Path('/opt') / name / 'bin/python' for name in ('gvhmr', 'gmr')}
 if NATIVE:
     PYTHONS['gvhmr'] = ROOT / '.venv/bin/python'
+    PYTHONS['gmr'] = ROOT / '.venv-gmr/bin/python'
+    PIPELINE = ROOT / '.pipeline'
 SAMPLE = ('https://raw.githubusercontent.com/zju3dv/GVHMR/ee960bb6e2ea2d381aa97f08e9b71ef320b624b1/'
           'docs/example_video/tennis.mp4')
 
@@ -146,10 +148,17 @@ def convert(video, clip, record=True):
 
 
 def process(video, clip, record=True):
-    if NATIVE:
-        raise RuntimeError('On Mac use ./workshop convert <video>; GMR → CSV runs on the NVIDIA/Linux server.')
     prediction, clip = convert(video, clip, record)
     retarget(prediction, clip, record)
+
+
+def body_model_root():
+    """Docker keeps them in data/body_models; on a Mac, GVHMR's own config decides."""
+    if not NATIVE:
+        return DATA / 'body_models'
+    out = subprocess.run([str(PYTHONS['gvhmr']), '-c', 'from gvhmr.utils import assets; print(assets.BODY_MODEL_ROOT)'],
+                         cwd=ROOT, capture_output=True, text=True, check=True)
+    return Path(out.stdout.strip().splitlines()[-1])
 
 
 def pose_result(value, clip):
@@ -169,19 +178,18 @@ def pose_result(value, clip):
 
 def retarget(prediction, clip, record=True):
     prediction, clip = pose_result(prediction, clip)
-    if NATIVE:
-        raise RuntimeError('GMR → CSV requires the NVIDIA/Linux workshop server. '
-                           f'Copy the .pt there and run ./workshop retarget <path-to-pt> --clip {clip}')
+    if NATIVE and not PYTHONS['gmr'].exists():
+        raise RuntimeError('Step 2 (GMR) is not installed on this Mac yet. Run ./setup.sh again.')
     folder = DATA / 'outputs' / clip
     robot_data = folder / 'robot_data/booster_k1'
     robot_data.mkdir(parents=True, exist_ok=True)
-    body = DATA / 'body_models/smplx/SMPLX_NEUTRAL.npz'
-    if not body.is_file():
-        raise FileNotFoundError(f'{body}: run ./workshop setup first.')
+    body_models = body_model_root()
+    if not (body_models / 'smplx/SMPLX_NEUTRAL.npz').is_file():
+        raise FileNotFoundError(f'No SMPL-X body model in {body_models}: run ./workshop auth first.')
     motion = robot_data / f'{clip}_booster_k1.pkl'
     run([PYTHONS['gmr'], PIPELINE / 'scripts/retarget_gvhmr.py',
          '--gvhmr-result', prediction, '--robot', 'booster_k1', '--output', motion,
-         '--body-models', DATA / 'body_models', '--fps', '30', '--clip-name', clip],
+         '--body-models', body_models, '--fps', '30', '--clip-name', clip],
         log=folder / 'logs/retarget.log')
     run([PYTHONS['gmr'], PIPELINE / 'external/GMR/scripts/batch_gmr_pkl_to_csv.py',
          '--folder', robot_data], log=folder / 'logs/csv.log')
@@ -239,7 +247,9 @@ def main(argv=None):
         check()
     elif args.command == 'doctor':
         if NATIVE:
-            run([PYTHONS['gvhmr'], '-m', 'pip', 'check'])
+            for python in PYTHONS.values():
+                run([python, '-m', 'pip', 'check'])
+            run([PYTHONS['gmr'], '-c', 'import general_motion_retargeting, mujoco; print("GMR imports OK")'])
             gvhmr('info')
             return
         doctor()

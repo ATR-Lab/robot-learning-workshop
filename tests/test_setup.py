@@ -20,15 +20,16 @@ class SetupTest(unittest.TestCase):
             with self.subTest(system=system), tempfile.TemporaryDirectory() as tmp:
                 root = Path(tmp)
                 shutil.copy2(ROOT / 'setup.sh', root / 'setup.sh')
+                shutil.copy2(ROOT / 'Dockerfile', root / 'Dockerfile')
                 (root / 'scripts').mkdir()
                 shutil.copy2(ROOT / 'scripts/python-env.sh', root / 'scripts/python-env.sh')
                 self.executable(root / 'bin/uname',
                                 f'if [[ "$1" == -m ]]; then echo x86_64; else echo {system}; fi')
-                for command in ('ffmpeg', 'ffprobe', 'docker', 'nvidia-smi'):
+                for command in ('ffmpeg', 'ffprobe', 'docker', 'nvidia-smi', 'git'):
                     self.executable(root / 'bin' / command, 'exit 0')
                 self.executable(root / 'sim', 'exit 0')
                 self.executable(root / 'workshop', 'echo "$*" >> "$TEST_CALLS"')
-                for folder in ('.venv', '.venv-sim'):
+                for folder in ('.venv', '.venv-sim', '.venv-gmr'):
                     self.executable(root / folder / 'bin/python', 'exit 0')
                     self.executable(root / folder / 'bin/gvhmr', 'echo "$*" >> "$TEST_CALLS"')
                     (root / folder / 'pyvenv.cfg').touch()

@@ -21,6 +21,19 @@ if [[ "$(uname -s)" == Darwin ]]; then
     .venv/bin/python -m pip install --no-build-isolation chumpy==0.70
     .venv/bin/python -m pip install 'gvhmr[preproc]==1.6.1'
     .venv/bin/python -m pip check
+    # Step 2 (GMR): the same pinned pipeline as the Docker image, in its own environment.
+    commit="$(sed -n 's/^ARG EXPRESSIVE_COMMIT=//p' Dockerfile)"
+    if [[ "$(git -C .pipeline rev-parse HEAD 2>/dev/null)" != "$commit" ]]; then
+        [[ -d .pipeline/.git ]] || git clone https://github.com/ATR-Lab/expressive-motion.git .pipeline
+        git -C .pipeline fetch -q origin
+        git -C .pipeline checkout -q "$commit"
+        git -C .pipeline submodule update --init --recursive external/GMR
+    fi
+    ensure_python312_env "$ROOT/.venv-gmr"
+    .venv-gmr/bin/python -m pip install 'setuptools<81' wheel toml cython 'numpy==1.26.4'
+    .venv-gmr/bin/python -m pip install --no-build-isolation chumpy==0.70
+    .venv-gmr/bin/python -m pip install --no-build-isolation -e .pipeline/external/GMR 'numpy==1.26.4'
+    .venv-gmr/bin/python -m pip check
     if [[ "${1:-}" == --deps-only ]]; then
         echo 'Dependencies ready. Before conversion, run: ./workshop auth (SMPL-X and SMPL accounts).'
         exit 0
@@ -30,7 +43,7 @@ if [[ "$(uname -s)" == Darwin ]]; then
         .venv/bin/gvhmr auth smpl
     fi
     ./workshop download
-    echo 'Ready. Try: ./workshop convert data/inputs/tennis.mp4'
+    echo 'Ready. Try: ./workshop process data/inputs/tennis.mp4'
     exit 0
 fi
 if [[ "${1:-}" == --sim-only ]]; then
