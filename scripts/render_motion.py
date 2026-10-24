@@ -1,4 +1,4 @@
-"""Run in the GMR environment: render a GMR K1 motion (.pkl) to mp4, optionally beside the input video."""
+"""Run in the GMR environment: render a GMR robot motion (.pkl) to mp4, optionally beside the input video."""
 import argparse
 import pickle
 import subprocess
@@ -25,6 +25,8 @@ dof_pos = np.asarray(motion['dof_pos'])
 model = mj.MjModel.from_xml_path(str(ROBOT_XML_DICT[motion.get('robot', 'booster_k1')]))
 data = mj.MjData(model)
 height, width = args.size, args.size * 4 // 3
+model.vis.global_.offwidth = max(model.vis.global_.offwidth, width)
+model.vis.global_.offheight = max(model.vis.global_.offheight, height)
 renderer = mj.Renderer(model, height=height, width=width)
 camera = mj.MjvCamera()
 camera.distance, camera.elevation, camera.azimuth = 2.5, -10.0, 90.0  # facing the robot's front
@@ -44,7 +46,7 @@ encoder.stdin.close()
 renderer.close()
 if encoder.wait():
     raise SystemExit('ffmpeg failed while writing ' + args.output)
-print(f'K1 video: {args.output} ({len(root_pos)} frames at {fps:g} fps)')
+print(f'Robot video: {args.output} ({len(root_pos)} frames at {fps:g} fps)')
 
 if args.beside:
     subprocess.run(['ffmpeg', '-nostdin', '-y', '-v', 'error', '-i', args.beside, '-i', args.output,

@@ -109,9 +109,9 @@ The full **Ubuntu + NVIDIA Docker pipeline is validated** on the tennis sample: 
 
 | Command | What it does |
 | :--- | :--- |
-| `./workshop convert data/inputs/x.mp4` | Video → human motion only: `data/outputs/x/gvhmr/hmr4d_results.pt` (Mac and Docker) |
-| `./workshop retarget data/outputs/x/gvhmr/hmr4d_results.pt --clip x` | Human motion → K1 CSV (Docker only) |
-| `./workshop process data/inputs/x.mp4` | Both of the above |
+| `./workshop convert data/inputs/x.mp4` | Video → body pose: `data/outputs/x/gvhmr/hmr4d_results.pt` + `x_pose.mp4` (Mac and Docker) |
+| `./workshop retarget x` | Body pose → K1 CSV + videos (Docker only). A `.pt` path also works; add `--clip NAME` if it is not in `data/outputs/<name>/gvhmr/` |
+| `./workshop process data/inputs/x.mp4` | Both of the above. Add `--no-video` to any of the three to skip videos |
 | `./workshop download` | Missing checkpoints + sample video, then the ✓ check |
 | `./workshop info` | Full GVHMR status. DPVO and data packs (3dpw, amass, …) stay ✗: not needed. Ignore its `gvhmr download` hint; use `./workshop download` |
 | `./setup.sh --deps-only` | Install without logins or downloads |

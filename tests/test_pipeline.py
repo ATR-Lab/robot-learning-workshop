@@ -107,7 +107,7 @@ class PipelineTest(unittest.TestCase):
                 if cmd[0] == 'ffmpeg':
                     Path(cmd[-1]).touch()
                 elif cmd[1].endswith('recover.py'):
-                    Path(cmd[-1]).touch()
+                    Path(cmd[3]).touch()
                 elif cmd[1].endswith('retarget_gvhmr.py'):
                     Path(cmd[cmd.index('--output') + 1]).touch()
                 elif cmd[1].endswith('batch_gmr_pkl_to_csv.py'):
@@ -124,7 +124,40 @@ class PipelineTest(unittest.TestCase):
             self.assertEqual(len(calls), 5)
             self.assertTrue((data / 'outputs/clip_123_test/clip_123_test_k1.mp4').is_file())
             self.assertIn('--beside', calls[-1])
+            self.assertTrue(calls[1][-1].endswith('clip_123_test_pose.mp4'))
             self.assertFalse(any('train.py' in arg or 'csv_to_npz.py' in arg for call in calls for arg in call))
+
+    def test_retarget_by_clip_name_and_no_video(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            data = root / 'data'
+            for path in (data / 'outputs/tennis/gvhmr/hmr4d_results.pt',
+                         data / 'body_models/smplx/SMPLX_NEUTRAL.npz'):
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.touch()
+
+            def fake_run(command, **kwargs):
+                cmd = list(map(str, command))
+                if cmd[1].endswith('batch_gmr_pkl_to_csv.py'):
+                    (Path(cmd[-1]) / 'csv').mkdir()
+                    (Path(cmd[-1]) / 'csv/tennis_booster_k1.csv').write_text('data')
+
+            with patch.multiple(w, ROOT=root, DATA=data), patch.object(w, 'run', side_effect=fake_run) as run:
+                w.main(['retarget', 'tennis', '--no-video'])
+            self.assertEqual((data / 'outputs/tennis/tennis.csv').read_text(), 'data')
+            self.assertEqual(run.call_count, 2)
+            with patch.multiple(w, ROOT=root, DATA=data), self.assertRaisesRegex(FileNotFoundError, 'convert'):
+                w.main(['retarget', 'dance'])
+
+    def test_convert_no_video_skips_pose_render(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            video = root / 'data/inputs/clip.mp4'
+            video.parent.mkdir(parents=True)
+            video.touch()
+            with patch.multiple(w, ROOT=root, DATA=root / 'data'), patch.object(w, 'run') as run:
+                w.main(['convert', str(video), '--no-video'])
+            self.assertEqual(len(run.call_args_list[1].args[0]), 4)
 
     def test_rejects_inputs_outside_data(self):
         with tempfile.TemporaryDirectory() as tmp, patch.object(w, 'DATA', Path(tmp) / 'data'):

@@ -103,7 +103,7 @@ def download():
     check()
 
 
-def convert(video, clip):
+def convert(video, clip, record=True):
     video = data_file(video, allow_external=NATIVE)
     if not shutil.which('ffmpeg') or not shutil.which('ffprobe'):
         raise RuntimeError('FFmpeg/ffprobe are missing. Rerun ./setup.sh.')
@@ -120,7 +120,8 @@ def convert(video, clip):
         digest = hashlib.file_digest(source, 'sha256').hexdigest()
     signature = folder / 'source.sha256'
     if not signature.exists() or signature.read_text().strip() != digest:
-        artifacts = [folder / name for name in ('gvhmr', 'robot_data', f'{clip}.csv', 'input.mp4', 'logs')]
+        artifacts = [folder / name for name in ('gvhmr', 'robot_data', f'{clip}.csv', 'input.mp4', 'logs',
+                                                f'{clip}_pose.mp4', f'{clip}_k1.mp4', f'{clip}_compare.mp4')]
         if any(path.exists() for path in artifacts):
             backup = Path(tempfile.mkdtemp(prefix='previous-', dir=folder))
             for path in artifacts:
@@ -134,24 +135,43 @@ def convert(video, clip):
     signature.write_text(digest + '\n')
     prediction = folder / 'gvhmr/hmr4d_results.pt'
     prediction.parent.mkdir(parents=True, exist_ok=True)
-    run([PYTHONS['gvhmr'], ROOT / 'scripts/recover.py', staged, prediction],
-        log=folder / 'logs/gvhmr.log')
-    print(f'Human motion: data/outputs/{clip}/gvhmr/hmr4d_results.pt')
+    recover = [PYTHONS['gvhmr'], ROOT / 'scripts/recover.py', staged, prediction]
+    if record:
+        recover.append(folder / f'{clip}_pose.mp4')
+    run(recover, log=folder / 'logs/gvhmr.log')
+    print(f'Body pose: data/outputs/{clip}/gvhmr/hmr4d_results.pt'
+          + (f' + {clip}_pose.mp4' if record else '')
+          + f'. Next: ./workshop retarget {clip}')
     return prediction, clip
 
 
-def process(video, clip):
+def process(video, clip, record=True):
     if NATIVE:
         raise RuntimeError('On Mac use ./workshop convert <video>; GMR → CSV runs on the NVIDIA/Linux server.')
-    prediction, clip = convert(video, clip)
-    retarget(prediction, clip)
+    prediction, clip = convert(video, clip, record)
+    retarget(prediction, clip, record)
 
 
-def retarget(prediction, clip):
+def pose_result(value, clip):
+    """A clip name (tennis) means data/outputs/tennis/gvhmr/hmr4d_results.pt."""
+    path = Path(value)
+    if path.suffix != '.pt' and len(path.parts) == 1:
+        clip = clip or clip_name(value)
+        path = DATA / 'outputs' / value / 'gvhmr/hmr4d_results.pt'
+        if not path.is_file():
+            raise FileNotFoundError(f'No body pose for {value!r}. Run first: ./workshop convert data/inputs/{value}.mp4')
+    elif clip is None:
+        if path.parent.name != 'gvhmr':
+            raise ValueError('Add --clip NAME to choose the output folder for this .pt file.')
+        clip = clip_name(path.resolve().parent.parent.name)
+    return data_file(path), clip
+
+
+def retarget(prediction, clip, record=True):
+    prediction, clip = pose_result(prediction, clip)
     if NATIVE:
         raise RuntimeError('GMR → CSV requires the NVIDIA/Linux workshop server. '
-                           'Copy the .pt there and run ./workshop retarget <path-to-pt> --clip ' + clip)
-    prediction = data_file(prediction)
+                           f'Copy the .pt there and run ./workshop retarget <path-to-pt> --clip {clip}')
     folder = DATA / 'outputs' / clip
     robot_data = folder / 'robot_data/booster_k1'
     robot_data.mkdir(parents=True, exist_ok=True)
@@ -169,13 +189,15 @@ def retarget(prediction, clip):
     if not csv.is_file():
         raise FileNotFoundError(f'GMR produced no CSV: {csv}')
     shutil.copy2(csv, folder / f'{clip}.csv')
-    render = [PYTHONS['gmr'], ROOT / 'scripts/render_motion.py', motion, folder / f'{clip}_k1.mp4']
-    if (folder / 'input.mp4').is_file():
-        render += ['--beside', folder / 'input.mp4', '--compare-output', folder / f'{clip}_compare.mp4']
-    run(render, log=folder / 'logs/render.log')
-    print(f'Ready: data/outputs/{clip}/ — {clip}.csv, {clip}_k1.mp4'
-          + (f', {clip}_compare.mp4' if len(render) > 4 else '')
-          + '. Send this folder to the workshop server for training.')
+    made = [f'{clip}.csv']
+    if record:
+        render = [PYTHONS['gmr'], ROOT / 'scripts/render_motion.py', motion, folder / f'{clip}_k1.mp4']
+        made.append(f'{clip}_k1.mp4')
+        if (folder / 'input.mp4').is_file():
+            render += ['--beside', folder / 'input.mp4', '--compare-output', folder / f'{clip}_compare.mp4']
+            made.append(f'{clip}_compare.mp4')
+        run(render, log=folder / 'logs/render.log')
+    print(f"Ready: data/outputs/{clip}/ — {', '.join(made)}. Send this folder to the workshop server for training.")
 
 
 
@@ -193,15 +215,17 @@ def main(argv=None):
     ):
         subs.add_parser(name, help=help_text)
     for name, help_text in (
-        ('convert', 'GVHMR only: video → human motion at 30 fps.'),
-        ('process', 'GVHMR + GMR: video → K1 motion at 30 fps.'),
+        ('convert', 'Step 1 · GVHMR: video → body pose (+ <clip>_pose.mp4).'),
+        ('process', 'Steps 1 + 2: video → body pose → K1 motion.'),
     ):
         p = subs.add_parser(name, help=help_text)
         p.add_argument('video')
         p.add_argument('--clip', type=clip_name)
-    p = subs.add_parser('retarget', help='Use an existing trusted 30 fps GVHMR result.')
-    p.add_argument('prediction')
-    p.add_argument('--clip', required=True, type=clip_name)
+        p.add_argument('--no-video', dest='record', action='store_false', help='skip the result videos')
+    p = subs.add_parser('retarget', help='Step 2 · GMR: body pose → K1 CSV (+ <clip>_k1.mp4, <clip>_compare.mp4).')
+    p.add_argument('prediction', help='clip name from step 1 (e.g. tennis) or a trusted 30 fps hmr4d_results.pt')
+    p.add_argument('--clip', type=clip_name)
+    p.add_argument('--no-video', dest='record', action='store_false', help='skip the result videos')
     args = parser.parse_args(argv)
     for directory in ('inputs', 'outputs', 'cache', 'home', 'body_models'):
         (DATA / directory).mkdir(parents=True, exist_ok=True)
@@ -223,11 +247,11 @@ def main(argv=None):
     elif args.command == 'shell':
         os.execvp('/bin/bash', ['/bin/bash'])
     elif args.command == 'convert':
-        convert(args.video, args.clip)
+        convert(args.video, args.clip, args.record)
     elif args.command == 'process':
-        process(args.video, args.clip)
+        process(args.video, args.clip, args.record)
     elif args.command == 'retarget':
-        retarget(args.prediction, args.clip)
+        retarget(args.prediction, args.clip, args.record)
 
 if __name__ == '__main__':
     try:

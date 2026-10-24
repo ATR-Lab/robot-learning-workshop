@@ -15,18 +15,20 @@ cd robot-learning-workshop
 ./workshop demo                                # watch the K1 cartwheel in simulation
 ```
 
-Setup takes 20–40 minutes the first time and ends with **`Ready`**. `process` saves in **`data/outputs/tennis/`**: `tennis.csv` (K1 motion), `tennis_k1.mp4` (K1 animation) and `tennis_compare.mp4` (your video beside the K1). Compare with the [expected result](examples/tennis).
+Setup takes 20–40 minutes the first time and ends with **`Ready`**. `process` saves in **`data/outputs/tennis/`**: `tennis.csv` (K1 motion) plus videos: `tennis_pose.mp4` (body pose), `tennis_k1.mp4` (K1) and `tennis_compare.mp4` (video beside the K1). Compare with the [expected result](examples/tennis).
 
-## Your own video
+## Your own video · two steps
 
 Copy it to `data/inputs/` (one person, full body visible, camera not moving), then:
 
 ```bash
-./workshop process data/inputs/dance.mp4       # → data/outputs/dance/: dance.csv + dance_k1.mp4 + dance_compare.mp4
+./workshop convert data/inputs/dance.mp4       # 1. video → body pose     → dance_pose.mp4
+./workshop retarget dance                      # 2. body pose → K1 robot   → dance.csv, dance_k1.mp4, dance_compare.mp4
 ```
 
-Send the `data/outputs/dance/` folder to the workshop team; they train the policy.
-On a **Mac** use `./workshop convert` instead and send the folder: the CSV step runs on the server.
+Results are in `data/outputs/dance/`. `./workshop process data/inputs/dance.mp4` runs both steps. Videos are on by default; add **`--no-video`** to any of these commands to skip them.
+
+Send the `data/outputs/dance/` folder to the workshop team; they train the policy. On a **Mac**, run step 1 and send the folder: step 2 runs on the server.
 
 ## Run a policy
 
@@ -47,5 +49,7 @@ Mac opens a viewer (**Enter** restart, **Space** pause). Docker prints a browser
 | All commands | `./workshop --help` |
 
 Disk space: about **60 GB** with Docker, **20 GB** on Mac. Passwords stay on your computer; never put them in chat or Git.
+
+**Play with the real tools** (GVHMR, GMR, MuJoCo options, other robots): [advanced guide](docs/advanced.md).
 
 **More:** [setup details and troubleshooting](docs/setup-details.md) · [Docker install](docs/docker.md) · [Mac](docs/macos.md) · [tennis example result](examples/tennis) · [cartwheel example](examples/cartwheel) ([video](docs/examples/cartwheel_final_29999.mp4)) · [test results](docs/validation.md)

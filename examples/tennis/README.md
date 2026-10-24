@@ -10,6 +10,7 @@ Your `data/outputs/tennis/` should match these files:
 
 - `tennis_compare.mp4`: input video beside the K1. [Watch it](tennis_compare.mp4).
 - `tennis_k1.mp4`: the K1 alone.
+- `tennis_pose.mp4` (not included here): the recovered body over the video beside the body in 3D.
 - `tennis.csv`: K1 motion, 312 rows at 30 fps. Columns: root position x, y, z in metres, root quaternion (`x,y,z,w`), 22 joint angles in radians.
 
 Small numeric differences between runs are normal. Input: [GVHMR's tennis sample](https://github.com/zju3dv/GVHMR/tree/ee960bb6e2ea2d381aa97f08e9b71ef320b624b1/docs/example_video), research use under its license.
