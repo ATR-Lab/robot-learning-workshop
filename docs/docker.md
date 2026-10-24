@@ -65,6 +65,8 @@ The container must list your GPU. `permission denied` on `docker.sock`: reconnec
 
 With Docker Desktop's WSL backend, skip Ubuntu's Engine/Toolkit commands above: Desktop manages the engine and GPU integration. Do not install a Linux NVIDIA display driver inside WSL. Allocate enough storage to Docker Desktop/WSL as well as to the project. Clone into `~/robot-learning-workshop` inside Ubuntu.
 
+**Windows status: untested.** Only a Linux host has run this setup. On WSL 2 the motion steps (GVHMR → GMR → CSV) should work: Docker Desktop gives containers CUDA. The video steps are the likely problem: robot videos, `_pose.mp4` and `--record` render with GPU OpenGL (EGL) inside the container, which WSL 2 supports poorly. If a video step fails, add `--no-video` to `convert`, `retarget` or `process`; the browser player (`./workshop demo`) may still work. Please report what happens on your machine.
+
 ## Install everything
 
 Register first and accept the terms at **both [SMPL-X](https://smpl-x.is.tue.mpg.de/) and [SMPL](https://smpl.is.tue.mpg.de/)**. These are separate accounts/licenses; do not assume one login covers both. Then, from the cloned repository:
